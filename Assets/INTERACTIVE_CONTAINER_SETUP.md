@@ -168,3 +168,38 @@ To scale faster, introduce a small configuration file per interactive ID:
 - XML key map.
 
 This removes hardcoded assumptions and makes adding new interactives mostly data-only.
+
+## 8. Catalog-Based Selection
+
+Folder discovery at runtime is not a reliable contract for HTTP servers.
+Recommended approach:
+- Host `catalog.json` at `{serverRoot}/catalog.json`
+- Let Container fetch that file and build the selectable list in-game
+- Keep per-interactive metadata in the catalog when bundle folder or bundle base differs from the default convention
+
+Example:
+
+```json
+{
+   "interactives": [
+      {
+         "id": "ID106",
+         "title": "ID106",
+         "folder": "ID106",
+         "grade": "grade1",
+         "bundleBaseName": "englishtek.grade1.id106"
+      },
+      {
+         "id": "ID213",
+         "title": "ID213",
+         "folder": "ID213",
+         "grade": "grade1",
+         "bundleBaseName": "englishtek.grade1.id213"
+      }
+   ]
+}
+```
+
+Best practice:
+- Generate `catalog.json` during your publish or upload step
+- Do not maintain it by hand if new interactives are added frequently

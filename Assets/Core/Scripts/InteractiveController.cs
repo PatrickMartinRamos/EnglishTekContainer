@@ -9,24 +9,153 @@ using System.Reflection;
 
 namespace EnglishTek.Core
 {
+    [Serializable]
+    public class InteractiveCatalogEntry
+    {
+        public string id;
+        public string title;
+        public string image;
+        public string category;
+        public string unit;
+        public string folder;
+        public string grade;
+        public string bundleBaseName;
+        public bool enabled = true;
+
+        public string DisplayName
+        {
+            get
+            {
+                if (!string.IsNullOrEmpty(title))
+                {
+                    return title;
+                }
+
+                return id;
+            }
+        }
+    }
+
+    [Serializable]
+    public class InteractiveCatalogDocument
+    {
+        public List<InteractiveCatalogEntry> interactives = new List<InteractiveCatalogEntry>();
+    }
+
     public class InteractiveController : MonoBehaviour
     {
         [SerializeField] private string serverRoot = "http://localhost:8080/Interactive/";
         [SerializeField] private string grade = "grade1";
+        [SerializeField] private string catalogFileName = "catalog.json";
+        [SerializeField] private string defaultCategory = string.Empty;
+        [SerializeField] private string defaultUnit = string.Empty;
+        [SerializeField] private bool refreshCatalogOnStart = true;
+
+        private readonly List<InteractiveCatalogEntry> availableInteractives = new List<InteractiveCatalogEntry>();
+        private Coroutine catalogLoadRoutine;
+
+        public IReadOnlyList<InteractiveCatalogEntry> AvailableInteractives => availableInteractives;
+        public event Action<IReadOnlyList<InteractiveCatalogEntry>> CatalogUpdated;
+        public event Action<string> CatalogLoadFailed;
+
+        private struct DownloadTarget
+        {
+            public string requestedId;
+            public string folderName;
+            public string selectedGrade;
+            public string bundleFileNameBase;
+            public string cacheKey;
+        }
+
+        private void Start()
+        {
+            if (refreshCatalogOnStart)
+            {
+                RefreshCatalog();
+            }
+        }
+
+        public void RefreshCatalog()
+        {
+            if (catalogLoadRoutine != null)
+            {
+                StopCoroutine(catalogLoadRoutine);
+            }
+
+            catalogLoadRoutine = StartCoroutine(LoadCatalogRoutine());
+        }
 
         public void RequestGameLoad(string gameId)
         {
-            StartCoroutine(DownloadAndStartRoutine(gameId));
+            InteractiveCatalogEntry matchedEntry = FindCatalogEntry(gameId);
+            StartCoroutine(DownloadAndStartRoutine(BuildDownloadTarget(gameId, matchedEntry)));
         }
 
-        IEnumerator DownloadAndStartRoutine(string gameId)
+        private IEnumerator LoadCatalogRoutine()
         {
-            string folderPath = serverRoot + gameId + "/"; // Assuming server organizes by game ID folders
-            string fileNameBase = "englishtek." + grade.ToLowerInvariant() + "." + gameId.ToLowerInvariant();
+            string catalogUrl = BuildCatalogUrl();
+            UnityWebRequest request = UnityWebRequest.Get(catalogUrl);
+            yield return request.SendWebRequest();
+
+            catalogLoadRoutine = null;
+
+            if (request.isNetworkError || request.isHttpError)
+            {
+                string message = "Catalog download failed: " + request.error + " | URL: " + catalogUrl;
+                Debug.LogWarning(message);
+                CatalogLoadFailed?.Invoke(message);
+                yield break;
+            }
+
+            string json = request.downloadHandler.text;
+            if (string.IsNullOrWhiteSpace(json))
+            {
+                string message = "Catalog download returned empty JSON. URL: " + catalogUrl;
+                Debug.LogWarning(message);
+                CatalogLoadFailed?.Invoke(message);
+                yield break;
+            }
+
+            InteractiveCatalogDocument catalog = null;
+            try
+            {
+                catalog = JsonUtility.FromJson<InteractiveCatalogDocument>(json);
+            }
+            catch (ArgumentException ex)
+            {
+                string message = "Catalog JSON could not be parsed. " + ex.Message;
+                Debug.LogWarning(message);
+                CatalogLoadFailed?.Invoke(message);
+                yield break;
+            }
+
+            availableInteractives.Clear();
+            if (catalog != null && catalog.interactives != null)
+            {
+                foreach (InteractiveCatalogEntry entry in catalog.interactives)
+                {
+                    if (entry == null || !entry.enabled || string.IsNullOrWhiteSpace(entry.id))
+                    {
+                        continue;
+                    }
+
+                    availableInteractives.Add(entry);
+                }
+            }
+
+            availableInteractives.Sort((left, right) => string.Compare(left.DisplayName, right.DisplayName, StringComparison.OrdinalIgnoreCase));
+            CatalogUpdated?.Invoke(availableInteractives);
+        }
+
+        IEnumerator DownloadAndStartRoutine(DownloadTarget target)
+        {
+            string gameId = target.requestedId;
+            string folderPath = BuildFolderUrl(target.folderName);
+            string fileNameBase = target.bundleFileNameBase;
             string assetBundleUrl = folderPath + fileNameBase + ".assets";
             string sceneBundleUrl = folderPath + fileNameBase + ".scenes";
 
-            string cacheDirectory = GetCacheDirectory(gameId);
+            string cacheDirectory = GetCacheDirectory(target.cacheKey);
             string assetCachePath = Path.Combine(cacheDirectory, fileNameBase + ".assets");
             string sceneCachePath = Path.Combine(cacheDirectory, fileNameBase + ".scenes");
 
@@ -58,28 +187,9 @@ namespace EnglishTek.Core
             InteractiveManifest manifest = null;
             string[] assetNames = GameSession.CurrentAssetBundle.GetAllAssetNames();
 
-            foreach (string name in assetNames)
-            {
-                manifest = GameSession.CurrentAssetBundle.LoadAsset<InteractiveManifest>(name);
-                if (manifest != null) 
-                {
-                    Debug.Log("Successfully loaded manifest from: " + name);
-                    break; 
-                }
-            }
-
-            if (manifest == null)
-            {
-                foreach (string name in assetNames)
-                {
-                    UnityEngine.Object rawAsset = GameSession.CurrentAssetBundle.LoadAsset(name);
-                    if (TryBuildManifestFromObject(rawAsset, out manifest))
-                    {
-                        Debug.LogWarning("Recovered manifest from asset: " + name + " | Runtime Type: " + rawAsset.GetType().FullName);
-                        break;
-                    }
-                }
-            }
+            // Skip direct manifest asset deserialization from external bundles because a
+            // script/assembly mismatch can emit missing-script warnings in runtime logs.
+            // Use scene-bundle fallback to determine startup scene and continue gameplay.
 
             if (manifest == null)
             {
@@ -88,7 +198,7 @@ namespace EnglishTek.Core
                 {
                     manifest = ScriptableObject.CreateInstance<InteractiveManifest>();
                     manifest.firstSceneName = fallbackSceneName;
-                    Debug.LogWarning("Recovered manifest using scene-bundle fallback. Scene: " + fallbackSceneName);
+                    Debug.Log("Recovered manifest using scene-bundle fallback. Scene: " + fallbackSceneName);
                 }
             }
 
@@ -100,32 +210,227 @@ namespace EnglishTek.Core
             if (manifest != null && !string.IsNullOrEmpty(manifest.firstSceneName))
             {
                 GameSession.CurrentManifest = manifest;
-                // This uses the string "Title" from your screenshot
-                UnityEngine.SceneManagement.SceneManager.LoadScene(manifest.firstSceneName);
+                // This uses the string "Title" 
+                UnityEngine.SceneManagement.SceneManager.LoadScene(manifest.firstSceneName, LoadSceneMode.Additive);
             }
             else
             {
                 Debug.LogError("Could not find any InteractiveManifest asset in the bundle! Available assets: " + string.Join(", ", assetNames));
-                UnityEngine.Object[] allAssets = GameSession.CurrentAssetBundle.LoadAllAssets();
-                foreach (var obj in allAssets)
-                {
-                    if (TryBuildManifestFromObject(obj, out manifest))
-                    {
-                        string runtimeType = obj.GetType().FullName;
-                        string runtimeAssembly = obj.GetType().Assembly.GetName().Name;
-                        Debug.LogWarning("Recovered manifest from LoadAllAssets: " + obj.name + " | Type: " + runtimeType + " | Assembly: " + runtimeAssembly);
-                        EnrichManifestFromBundleIfNeeded(manifest, gameId);
-                        GameSession.CurrentManifest = manifest;
-                        UnityEngine.SceneManagement.SceneManager.LoadScene(manifest.firstSceneName);
-                        break;
-                    }
-                }
             }
         }
 
         private string GetCacheDirectory(string gameId)
         {
             return Path.Combine(Application.persistentDataPath, "InteractiveCache", gameId);
+        }
+
+        private string BuildCatalogUrl()
+        {
+            return BuildRootUrl() + catalogFileName;
+        }
+
+        private string BuildFolderUrl(string folderName)
+        {
+            return BuildRootUrl() + NormalizePathPart(folderName) + "/";
+        }
+
+        public string ResolveCatalogAssetUrl(InteractiveCatalogEntry entry, string assetPath)
+        {
+            if (string.IsNullOrWhiteSpace(assetPath))
+            {
+                return null;
+            }
+
+            string trimmedPath = assetPath.Trim();
+            if (Uri.IsWellFormedUriString(trimmedPath, UriKind.Absolute))
+            {
+                return trimmedPath;
+            }
+
+            if (trimmedPath.StartsWith("/"))
+            {
+                return BuildRootUrl().TrimEnd('/') + trimmedPath;
+            }
+
+            if (entry != null && !string.IsNullOrWhiteSpace(entry.folder))
+            {
+                return CombineUrl(BuildFolderUrl(entry.folder), trimmedPath);
+            }
+
+            if (entry != null)
+            {
+                string defaultEntryFolder = BuildDefaultFolderPath(entry.category, entry.unit, entry.id);
+                if (!string.IsNullOrWhiteSpace(defaultEntryFolder))
+                {
+                    return CombineUrl(BuildFolderUrl(defaultEntryFolder), trimmedPath);
+                }
+            }
+
+            return CombineUrl(BuildRootUrl(), trimmedPath);
+        }
+
+        private string BuildRootUrl()
+        {
+            if (string.IsNullOrEmpty(serverRoot))
+            {
+                return string.Empty;
+            }
+
+            return serverRoot.EndsWith("/") ? serverRoot : serverRoot + "/";
+        }
+
+        private string CombineUrl(string baseUrl, string relativePath)
+        {
+            if (string.IsNullOrEmpty(baseUrl))
+            {
+                return relativePath;
+            }
+
+            return baseUrl.TrimEnd('/') + "/" + relativePath.TrimStart('/');
+        }
+
+        private InteractiveCatalogEntry FindCatalogEntry(string gameId)
+        {
+            string lookupId = NormalizeLookupId(gameId);
+            foreach (InteractiveCatalogEntry entry in availableInteractives)
+            {
+                if (entry == null)
+                {
+                    continue;
+                }
+
+                if (NormalizeLookupId(entry.id) == lookupId)
+                {
+                    return entry;
+                }
+            }
+
+            return null;
+        }
+
+        private DownloadTarget BuildDownloadTarget(string gameId, InteractiveCatalogEntry entry)
+        {
+            string effectiveGrade = grade;
+            string effectiveCategory = defaultCategory;
+            string effectiveUnit = defaultUnit;
+            string effectiveFolder = BuildDefaultFolderPath(effectiveCategory, effectiveUnit, gameId);
+            string effectiveBundleBase = BuildDefaultBundleBaseName(grade, gameId);
+
+            if (entry != null)
+            {
+                if (!string.IsNullOrWhiteSpace(entry.grade))
+                {
+                    effectiveGrade = entry.grade;
+                }
+
+                if (!string.IsNullOrWhiteSpace(entry.category))
+                {
+                    effectiveCategory = entry.category;
+                }
+
+                if (!string.IsNullOrWhiteSpace(entry.unit))
+                {
+                    effectiveUnit = entry.unit;
+                }
+
+                if (!string.IsNullOrWhiteSpace(entry.folder))
+                {
+                    effectiveFolder = entry.folder;
+                }
+                else
+                {
+                    effectiveFolder = BuildDefaultFolderPath(effectiveCategory, effectiveUnit, gameId);
+                }
+
+                if (!string.IsNullOrWhiteSpace(entry.bundleBaseName))
+                {
+                    effectiveBundleBase = entry.bundleBaseName;
+                }
+                else
+                {
+                    effectiveBundleBase = BuildDefaultBundleBaseName(effectiveGrade, gameId);
+                }
+            }
+
+            return new DownloadTarget
+            {
+                requestedId = gameId,
+                folderName = effectiveFolder,
+                selectedGrade = effectiveGrade,
+                bundleFileNameBase = effectiveBundleBase,
+                cacheKey = NormalizeCacheKey(gameId)
+            };
+        }
+
+        private string BuildDefaultBundleBaseName(string selectedGrade, string gameId)
+        {
+            return "englishtek." + selectedGrade.ToLowerInvariant() + "." + gameId.ToLowerInvariant();
+        }
+
+        private string BuildDefaultFolderPath(string categoryName, string unitName, string gameId)
+        {
+            string normalizedGameId = NormalizePathPart(gameId);
+            string normalizedCategory = NormalizePathPart(categoryName);
+            string normalizedUnit = NormalizePathPart(unitName);
+
+            List<string> pathParts = new List<string>();
+            if (!string.IsNullOrEmpty(normalizedCategory))
+            {
+                pathParts.Add(normalizedCategory);
+            }
+
+            if (!string.IsNullOrEmpty(normalizedUnit))
+            {
+                pathParts.Add(normalizedUnit);
+            }
+
+            if (!string.IsNullOrEmpty(normalizedGameId))
+            {
+                pathParts.Add(normalizedGameId);
+            }
+
+            if (pathParts.Count == 0)
+            {
+                return string.Empty;
+            }
+
+            return string.Join("/", pathParts.ToArray());
+        }
+
+        private string NormalizePathPart(string value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                return string.Empty;
+            }
+
+            return value.Trim().Replace("\\", "/").Trim('/');
+        }
+
+        private string NormalizeLookupId(string value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                return string.Empty;
+            }
+
+            string normalized = value.Trim().ToUpperInvariant();
+            if (!normalized.StartsWith("ID"))
+            {
+                normalized = "ID" + normalized;
+            }
+
+            return normalized;
+        }
+
+        private string NormalizeCacheKey(string value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                return "unknown";
+            }
+
+            return value.Trim().Replace("/", "_").Replace("\\", "_");
         }
 
         private IEnumerator LoadBundleWithLocalCacheRoutine(string remoteUrl, string localPath, string bundleLabel, Action<AssetBundle> onLoaded)
@@ -283,6 +588,17 @@ namespace EnglishTek.Core
 
             manifest = null;
             return false;
+        }
+
+        private bool IsLikelyManifestAssetName(string assetName)
+        {
+            if (string.IsNullOrEmpty(assetName))
+            {
+                return false;
+            }
+
+            string lowerName = assetName.ToLowerInvariant();
+            return lowerName.Contains("manifest") || lowerName.EndsWith(".asset");
         }
 
         private string TryGetFirstSceneNameFromSceneBundle(AssetBundle sceneBundle)
