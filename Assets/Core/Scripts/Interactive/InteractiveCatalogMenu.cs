@@ -149,6 +149,12 @@ namespace EnglishTek.Core
 
         public virtual void GoBack() { }
 
+        protected void HideHomeBackground()
+        {
+            homeBackgroundEnabled = false;
+            if (entryHomeBackground != null) { entryHomeBackground.HideBackground(); }
+        }
+
         public void SelectGrammarLesson()
         {
             SelectLesson("grammar");

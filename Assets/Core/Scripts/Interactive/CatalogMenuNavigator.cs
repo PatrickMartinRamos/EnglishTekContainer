@@ -62,6 +62,7 @@ namespace EnglishTek.Core
         {
             if (entryGroup != null && entryGroup.IsVisible)
             {
+                HideHomeBackground();
                 entryGroup.Hide(() =>
                 {
                     if (unitGroup != null) { unitGroup.Show(); }
@@ -84,6 +85,7 @@ namespace EnglishTek.Core
         /// </summary>
         public void GoToCategories()
         {
+            HideHomeBackground();
             SetUnitButtonsInteractable(true);
 
             if (entryGroup != null)

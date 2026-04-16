@@ -5,44 +5,9 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
-using System.Reflection;
 
 namespace EnglishTek.Core
 {
-    [Serializable]
-    public class InteractiveCatalogEntry
-    {
-        public string id;
-        public string title;
-        public string image;
-        public string home;
-        public string category;
-        public string unit;
-        public string folder;
-        public string grade;
-        public string bundleBaseName;
-        public bool enabled = true;
-
-        public string DisplayName
-        {
-            get
-            {
-                if (!string.IsNullOrEmpty(title))
-                {
-                    return title;
-                }
-
-                return id;
-            }
-        }
-    }
-
-    [Serializable]
-    public class InteractiveCatalogDocument
-    {
-        public List<InteractiveCatalogEntry> interactives = new List<InteractiveCatalogEntry>();
-    }
-
     public class InteractiveController : MonoBehaviour
     {
         [SerializeField] private string serverRoot = "http://localhost:8080/Interactive/";
@@ -151,7 +116,7 @@ namespace EnglishTek.Core
             CatalogUpdated?.Invoke(availableInteractives);
         }
 
-        IEnumerator DownloadAndStartRoutine(DownloadTarget target)
+        private IEnumerator DownloadAndStartRoutine(DownloadTarget target)
         {
             string gameId = target.requestedId;
             string folderPath = BuildFolderUrl(target.folderName);
@@ -232,12 +197,12 @@ namespace EnglishTek.Core
 
         private string BuildCatalogUrl()
         {
-            return BuildRootUrl() + NormalizePathPart(grade) + "/" + catalogFileName;
+            return BuildRootUrl() + EncodePathSegments(NormalizePathPart(grade)) + "/" + catalogFileName;
         }
 
         private string BuildFolderUrl(string folderName)
         {
-            return BuildRootUrl() + NormalizePathPart(folderName) + "/";
+            return BuildRootUrl() + EncodePathSegments(NormalizePathPart(folderName)) + "/";
         }
 
         public string ResolveCatalogAssetUrl(InteractiveCatalogEntry entry, string assetPath)
@@ -371,7 +336,8 @@ namespace EnglishTek.Core
 
         private string BuildDefaultBundleBaseName(string selectedGrade, string gameId)
         {
-            return "englishtek." + selectedGrade.ToLowerInvariant() + "." + gameId.ToLowerInvariant();
+            string safeGrade = selectedGrade.ToLowerInvariant().Replace(" ", string.Empty);
+            return "englishtek." + safeGrade + "." + gameId.ToLowerInvariant();
         }
 
         private string BuildDefaultFolderPath(string selectedGrade, string categoryName, string unitName, string gameId)
@@ -444,6 +410,19 @@ namespace EnglishTek.Core
             }
 
             return value.Trim().Replace("/", "_").Replace("\\", "_");
+        }
+
+        // Encodes each slash-separated segment of a path for use in a URL.
+        // e.g. "Grade 1/grammar/unit1" → "Grade%201/grammar/unit1"
+        private static string EncodePathSegments(string path)
+        {
+            if (string.IsNullOrEmpty(path)) { return path; }
+            string[] segments = path.Split('/');
+            for (int i = 0; i < segments.Length; i++)
+            {
+                segments[i] = Uri.EscapeDataString(segments[i]);
+            }
+            return string.Join("/", segments);
         }
 
         private IEnumerator LoadBundleWithLocalCacheRoutine(string remoteUrl, string localPath, string bundleLabel, Action<AssetBundle> onLoaded)
@@ -538,80 +517,6 @@ namespace EnglishTek.Core
             {
                 Debug.LogWarning("Failed to delete invalid cache file: " + filePath + " | " + deleteEx.Message);
             }
-        }
-
-        private bool TryBuildManifestFromObject(UnityEngine.Object source, out InteractiveManifest manifest)
-        {
-            manifest = null;
-            if (source == null)
-            {
-                return false;
-            }
-
-            InteractiveManifest typedManifest = source as InteractiveManifest;
-            if (typedManifest != null && !string.IsNullOrEmpty(typedManifest.firstSceneName))
-            {
-                manifest = typedManifest;
-                return true;
-            }
-
-            System.Type sourceType = source.GetType();
-            BindingFlags flags = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
-            FieldInfo sceneNameField = sourceType.GetField("firstSceneName", flags);
-            if (sceneNameField != null && sceneNameField.FieldType == typeof(string))
-            {
-                string recoveredSceneName = sceneNameField.GetValue(source) as string;
-                if (!string.IsNullOrEmpty(recoveredSceneName))
-                {
-                    manifest = ScriptableObject.CreateInstance<InteractiveManifest>();
-                    manifest.firstSceneName = recoveredSceneName;
-
-                    FieldInfo bundleNameField = sourceType.GetField("bundleName", flags);
-                    if (bundleNameField != null && bundleNameField.FieldType == typeof(string))
-                    {
-                        manifest.bundleName = bundleNameField.GetValue(source) as string;
-                    }
-
-                    return true;
-                }
-            }
-
-            // Last fallback for ScriptableObject assets with matching serialized field names.
-            ScriptableObject scriptableSource = source as ScriptableObject;
-            if (scriptableSource != null)
-            {
-                try
-                {
-                    string json = JsonUtility.ToJson(scriptableSource);
-                    if (!string.IsNullOrEmpty(json) && json != "{}")
-                    {
-                        manifest = ScriptableObject.CreateInstance<InteractiveManifest>();
-                        JsonUtility.FromJsonOverwrite(json, manifest);
-                        if (!string.IsNullOrEmpty(manifest.firstSceneName))
-                        {
-                            return true;
-                        }
-                    }
-                }
-                catch (System.ArgumentException)
-                {
-                    // Ignore non-serializable engine-backed objects and continue searching.
-                }
-            }
-
-            manifest = null;
-            return false;
-        }
-
-        private bool IsLikelyManifestAssetName(string assetName)
-        {
-            if (string.IsNullOrEmpty(assetName))
-            {
-                return false;
-            }
-
-            string lowerName = assetName.ToLowerInvariant();
-            return lowerName.Contains("manifest") || lowerName.EndsWith(".asset");
         }
 
         private string TryGetFirstSceneNameFromSceneBundle(AssetBundle sceneBundle)
