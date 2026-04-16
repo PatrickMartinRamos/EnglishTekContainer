@@ -5,6 +5,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
+using TMPro;
 
 namespace EnglishTek.Core
 {
@@ -115,7 +116,7 @@ namespace EnglishTek.Core
             availableInteractives.Sort((left, right) => string.Compare(left.DisplayName, right.DisplayName, StringComparison.OrdinalIgnoreCase));
             CatalogUpdated?.Invoke(availableInteractives);
         }
-
+        [SerializeField] private TextMeshProUGUI debugText;
         private IEnumerator DownloadAndStartRoutine(DownloadTarget target)
         {
             string gameId = target.requestedId;
@@ -130,6 +131,12 @@ namespace EnglishTek.Core
 
             AssetBundle loadedAssetBundle = null;
             AssetBundle loadedSceneBundle = null;
+
+            Debug.Log("[Download] Starting game load for: " + gameId);
+            Debug.Log("[Download] Assets URL: " + assetBundleUrl);
+            Debug.Log("[Download] Scenes URL: " + sceneBundleUrl);
+            Debug.Log("[Download] Asset cache path: " + assetCachePath);
+            Debug.Log("[Download] Scene cache path: " + sceneCachePath);
 
             yield return StartCoroutine(LoadBundleWithLocalCacheRoutine(assetBundleUrl, assetCachePath, "assets", bundle => loadedAssetBundle = bundle));
             if (loadedAssetBundle == null)
@@ -160,6 +167,10 @@ namespace EnglishTek.Core
             // script/assembly mismatch can emit missing-script warnings in runtime logs.
             // Use scene-bundle fallback to determine startup scene and continue gameplay.
 
+            Debug.Log("[Download] Assets in bundle: " + string.Join(", ", assetNames));
+            string[] scenePaths = GameSession.CurrentSceneBundle.GetAllScenePaths();
+            Debug.Log("[Download] Scenes in bundle: " + string.Join(", ", scenePaths));
+
             if (manifest == null)
             {
                 string fallbackSceneName = TryGetFirstSceneNameFromSceneBundle(GameSession.CurrentSceneBundle);
@@ -167,7 +178,11 @@ namespace EnglishTek.Core
                 {
                     manifest = ScriptableObject.CreateInstance<InteractiveManifest>();
                     manifest.firstSceneName = fallbackSceneName;
-                    Debug.Log("Recovered manifest using scene-bundle fallback. Scene: " + fallbackSceneName);
+                    Debug.Log("[Download] Recovered manifest using scene-bundle fallback. Scene: " + fallbackSceneName);
+                }
+                else
+                {
+                    Debug.LogError("[Download] No scenes found in scene bundle! Bundle may be built for wrong platform.");
                 }
             }
 
@@ -458,8 +473,16 @@ namespace EnglishTek.Core
                 }
             }
 
+            Debug.Log("[Download] Fetching " + bundleLabel + " from: " + remoteUrl);
+            
             UnityWebRequest req = UnityWebRequest.Get(remoteUrl);
-            yield return req.SendWebRequest();
+            req.SendWebRequest();
+            while (!req.isDone)
+            {
+                debugText.text = "[Download] " + bundleLabel + " progress: " + Mathf.RoundToInt(req.downloadProgress * 100f) + "%";
+                yield return null;
+            }
+            Debug.Log("[Download] " + bundleLabel + " progress: 100%");
 
             if (req.isNetworkError || req.isHttpError)
             {
@@ -476,15 +499,17 @@ namespace EnglishTek.Core
                 yield break;
             }
 
+            Debug.Log("[Download] " + bundleLabel + " downloaded " + downloadedBytes.Length + " bytes. Loading as AssetBundle...");
             AssetBundleCreateRequest remoteLoadReq = AssetBundle.LoadFromMemoryAsync(downloadedBytes);
             yield return remoteLoadReq;
             loadedBundle = remoteLoadReq.assetBundle;
             if (loadedBundle == null)
             {
-                Debug.LogError("Downloaded data is not a valid " + bundleLabel + " AssetBundle. URL: " + remoteUrl);
+                Debug.LogError("[Download] Downloaded data is NOT a valid " + bundleLabel + " AssetBundle. URL: " + remoteUrl + " | This usually means the bundle was built for a different platform (e.g. WebGL/Standalone instead of Android).");
                 onLoaded(null);
                 yield break;
             }
+            Debug.Log("[Download] " + bundleLabel + " AssetBundle loaded successfully.");
 
             try
             {
