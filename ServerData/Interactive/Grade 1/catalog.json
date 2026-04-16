@@ -6,14 +6,16 @@
       "category": "grammar",
       "unit": "unit1",
       "image": "thumb.png",
+      "home": "home.png",
       "enabled": true
     },
     {
       "id": "ID213",
       "title": "A Day at the Beach",
-      "category": "listening",
+      "category": "grammar",
       "unit": "unit1",
       "image": "thumb.png",
+      "home": "home.png",
       "enabled": true
     }
   ]

@@ -13,18 +13,25 @@ After download, it builds `GameSession` state and loads the first scene for the 
 ## 2. Runtime Architecture
 
 Core runtime scripts:
-- `Core/Scripts/InteractiveController.cs`
-- `Core/Scripts/GameSession.cs`
-- `Core/Scripts/InteractiveManifest.cs`
+- `Core/Scripts/InteractiveController.cs` — catalog fetch, bundle download/load, URL building
+- `Core/Scripts/GameSession.cs` — static state holder for current session bundles and manifest
+- `Core/Scripts/InteractiveManifest.cs` — ScriptableObject holding scene name and XML config entries
+- `Core/Scripts/InteractiveCatalogMenu.cs` — MonoBehaviour UI that drives category/unit/entry selection
+- `Core/Scripts/CatalogFilter.cs` — static helpers for filtering and querying catalog entries
+- `Core/Scripts/CatalogStringHelper.cs` — string normalization and display formatting for catalog values
+- `Core/Scripts/CatalogThumbnailLoader.cs` — async `UnityWebRequest` thumbnail image loader
+- `Core/Scripts/CatalogUiFactory.cs` — procedural UI element factory (panels, buttons, text, images)
 
 Interactive gameplay scripts (example implementation):
 - `Core/InteractiveScripts/ID106_Scripts/*.cs`
 
 Data flow:
 1. `InteractiveController.RequestGameLoad(gameId)` starts the download coroutine.
-2. The controller requests:
-   - `{serverRoot}/{gameId}/englishtek.{grade}.{gameId-lower}.assets`
-   - `{serverRoot}/{gameId}/englishtek.{grade}.{gameId-lower}.scenes`
+2. The controller builds the folder path from the catalog entry's `category`, `unit`, and `id` fields:
+   - `{serverRoot}/{category}/{unit}/{gameId}/englishtek.{grade}.{gameId-lower}.assets`
+   - `{serverRoot}/{category}/{unit}/{gameId}/englishtek.{grade}.{gameId-lower}.scenes`
+   If the catalog entry has an explicit `folder` field, that overrides the auto-built path.
+   If the catalog entry has an explicit `bundleBaseName` field, that overrides the auto-built file name.
 3. Bundles are stored in `GameSession.CurrentAssetBundle` and `GameSession.CurrentSceneBundle`.
 4. Manifest resolution runs in this order:
    - Direct cast: `LoadAsset<InteractiveManifest>`.
@@ -36,26 +43,37 @@ Data flow:
 ## 3. Current Naming Contract (Important)
 
 ### 3.1 Bundle naming
-`InteractiveController` builds bundle base from the configured `grade` field.
+`InteractiveController` builds the bundle base name from the configured `grade` and the catalog entry's `id`.
 
 Expected files on server:
 - `englishtek.{grade}.{gameId-lower}.assets`
 - `englishtek.{grade}.{gameId-lower}.scenes`
 
-Example for `grade=grade1` and `gameId=106`:
-- `englishtek.grade1.106.assets`
-- `englishtek.grade1.106.scenes`
+The `gameId` is lowercased as-is. Use the full ID string (including the `ID` prefix) consistently.
 
-Example for `grade=grade2` and `gameId=106`:
-- `englishtek.grade2.106.assets`
-- `englishtek.grade2.106.scenes`
+Example for `grade=grade1` and `gameId=ID106`:
+- `englishtek.grade1.id106.assets`
+- `englishtek.grade1.id106.scenes`
+
+Example for `grade=grade1` and `gameId=ID213`:
+- `englishtek.grade1.id213.assets`
+- `englishtek.grade1.id213.scenes`
 
 ### 3.2 Folder layout on server
-Expected URL pattern:
-- `{serverRoot}/{gameId}/...bundle files...`
+Default URL pattern (derived from catalog `category`, `unit`, and `id`):
+- `{serverRoot}/{category}/{unit}/{gameId}/...bundle files...`
+
+Explicit override using `folder` field in catalog entry:
+- `{serverRoot}/{folder}/...bundle files...`
 
 Default `serverRoot` in script:
 - `http://localhost:8080/Interactive/`
+
+Example for `category=grammar`, `unit=unit1`, `grade=grade1`, `gameId=ID213`:
+- `http://localhost:8080/Interactive/grammar/unit1/ID213/englishtek.grade1.id213.assets`
+- `http://localhost:8080/Interactive/grammar/unit1/ID213/englishtek.grade1.id213.scenes`
+
+**Note:** Bundle file names are always lowercase. The gameId is lowercased as-is, so `ID106` → `id106`.
 
 ### 3.3 Scene entry
 Best practice:
@@ -121,12 +139,15 @@ Name exactly as required:
 - `englishtek.{grade}.{id-lower}.scenes`
 
 ### Step 6: Upload to container server
-Place files under:
-- `{serverRoot}/{id}/`
+Place files under the path matching the catalog entry's category, unit, and id:
+- `{serverRoot}/{category}/{unit}/{id}/`
 
-Example:
-- `http://localhost:8080/Interactive/107/englishtek.grade1.107.assets` (if grade is `grade1`)
-- `http://localhost:8080/Interactive/107/englishtek.grade1.107.scenes` (if grade is `grade1`)
+Example (category=grammar, unit=unit1, grade=grade1, id=ID107):
+- `http://localhost:8080/Interactive/grammar/unit1/ID107/englishtek.grade1.id107.assets`
+- `http://localhost:8080/Interactive/grammar/unit1/ID107/englishtek.grade1.id107.scenes`
+- `http://localhost:8080/Interactive/grammar/unit1/ID107/thumb.png`
+
+If you use a custom folder path, set the `folder` field in the catalog entry to that path.
 
 ### Step 7: Trigger load from container UI/code
 Call:
@@ -181,22 +202,24 @@ Example:
 
 ```json
 {
-   "interactives": [
-      {
-         "id": "ID106",
-         "title": "ID106",
-         "folder": "ID106",
-         "grade": "grade1",
-         "bundleBaseName": "englishtek.grade1.id106"
-      },
-      {
-         "id": "ID213",
-         "title": "ID213",
-         "folder": "ID213",
-         "grade": "grade1",
-         "bundleBaseName": "englishtek.grade1.id213"
-      }
-   ]
+  "interactives": [
+    {
+      "id": "ID106",
+      "title": "Whack-a-Mole",
+      "category": "grammar",
+      "unit": "unit1",
+      "image": "thumb.png",
+      "enabled": true
+    },
+    {
+      "id": "ID213",
+      "title": "A Day at the Beach",
+      "category": "grammar",
+      "unit": "unit1",
+      "image": "thumb.png",
+      "enabled": true
+    }
+  ]
 }
 ```
 

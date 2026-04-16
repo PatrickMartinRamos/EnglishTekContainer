@@ -15,6 +15,7 @@ namespace EnglishTek.Core
         public string id;
         public string title;
         public string image;
+        public string home;
         public string category;
         public string unit;
         public string folder;
@@ -50,6 +51,9 @@ namespace EnglishTek.Core
         [SerializeField] private string defaultCategory = string.Empty;
         [SerializeField] private string defaultUnit = string.Empty;
         [SerializeField] private bool refreshCatalogOnStart = true;
+        [SerializeField] private ContainerReturnOverlay overlayPrefab = null;
+        [SerializeField] private OverlayButtonCorner overlayButtonCorner = OverlayButtonCorner.TopLeft;
+        [SerializeField] private Vector2 overlayButtonPadding = new Vector2(10f, 10f);
 
         private readonly List<InteractiveCatalogEntry> availableInteractives = new List<InteractiveCatalogEntry>();
         private Coroutine catalogLoadRoutine;
@@ -210,12 +214,14 @@ namespace EnglishTek.Core
             if (manifest != null && !string.IsNullOrEmpty(manifest.firstSceneName))
             {
                 GameSession.CurrentManifest = manifest;
+                GameSession.ContainerSceneName = SceneManager.GetActiveScene().name;
+                ContainerReturnOverlay.EnsureExists(overlayPrefab, overlayButtonCorner, overlayButtonPadding);
                 // This uses the string "Title" 
-                UnityEngine.SceneManagement.SceneManager.LoadScene(manifest.firstSceneName, LoadSceneMode.Additive);
+                SceneManager.LoadScene(manifest.firstSceneName, LoadSceneMode.Single);
             }
             else
             {
-                Debug.LogError("Could not find any InteractiveManifest asset in the bundle! Available assets: " + string.Join(", ", assetNames));
+                Debug.LogError("Could not find any InteractiveManifest asset in the bundle Available assets: " + string.Join(", ", assetNames));
             }
         }
 
@@ -226,7 +232,7 @@ namespace EnglishTek.Core
 
         private string BuildCatalogUrl()
         {
-            return BuildRootUrl() + catalogFileName;
+            return BuildRootUrl() + NormalizePathPart(grade) + "/" + catalogFileName;
         }
 
         private string BuildFolderUrl(string folderName)
@@ -259,7 +265,8 @@ namespace EnglishTek.Core
 
             if (entry != null)
             {
-                string defaultEntryFolder = BuildDefaultFolderPath(entry.category, entry.unit, entry.id);
+                string entryGrade = !string.IsNullOrWhiteSpace(entry.grade) ? entry.grade : grade;
+                string defaultEntryFolder = BuildDefaultFolderPath(entryGrade, entry.category, entry.unit, entry.id);
                 if (!string.IsNullOrWhiteSpace(defaultEntryFolder))
                 {
                     return CombineUrl(BuildFolderUrl(defaultEntryFolder), trimmedPath);
@@ -313,7 +320,7 @@ namespace EnglishTek.Core
             string effectiveGrade = grade;
             string effectiveCategory = defaultCategory;
             string effectiveUnit = defaultUnit;
-            string effectiveFolder = BuildDefaultFolderPath(effectiveCategory, effectiveUnit, gameId);
+            string effectiveFolder = BuildDefaultFolderPath(effectiveGrade, effectiveCategory, effectiveUnit, gameId);
             string effectiveBundleBase = BuildDefaultBundleBaseName(grade, gameId);
 
             if (entry != null)
@@ -339,7 +346,7 @@ namespace EnglishTek.Core
                 }
                 else
                 {
-                    effectiveFolder = BuildDefaultFolderPath(effectiveCategory, effectiveUnit, gameId);
+                    effectiveFolder = BuildDefaultFolderPath(effectiveGrade, effectiveCategory, effectiveUnit, gameId);
                 }
 
                 if (!string.IsNullOrWhiteSpace(entry.bundleBaseName))
@@ -367,13 +374,19 @@ namespace EnglishTek.Core
             return "englishtek." + selectedGrade.ToLowerInvariant() + "." + gameId.ToLowerInvariant();
         }
 
-        private string BuildDefaultFolderPath(string categoryName, string unitName, string gameId)
+        private string BuildDefaultFolderPath(string selectedGrade, string categoryName, string unitName, string gameId)
         {
-            string normalizedGameId = NormalizePathPart(gameId);
+            string normalizedGrade    = NormalizePathPart(selectedGrade);
+            string normalizedGameId   = NormalizePathPart(gameId);
             string normalizedCategory = NormalizePathPart(categoryName);
-            string normalizedUnit = NormalizePathPart(unitName);
+            string normalizedUnit     = NormalizePathPart(unitName);
 
             List<string> pathParts = new List<string>();
+            if (!string.IsNullOrEmpty(normalizedGrade))
+            {
+                pathParts.Add(normalizedGrade);
+            }
+
             if (!string.IsNullOrEmpty(normalizedCategory))
             {
                 pathParts.Add(normalizedCategory);

@@ -211,7 +211,7 @@ public class SubmitScore : MonoBehaviour {
         //Open image/pdf in new tab to prevent overwriting of current page
         #if !UNITY_EDITOR
             openWindow(universalUrl+url);
-            //Application.ExternalEval("window.open("universalUrl+url+"\",\"_blank\")");
+            //Application.ExternalEval("window.open("universalUrl+url+"\"_blank\")");
         #else
             Application.OpenURL(universalUrl+url);
         #endif

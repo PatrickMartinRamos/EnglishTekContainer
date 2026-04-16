@@ -13,16 +13,22 @@ The Container loads these bundles at runtime from server and local cache.
 ## 2. Required Runtime Contract
 
 The current Container loader expects:
-- Folder per interactive ID on server: `{serverRoot}/{gameId}/`
+- Folder per interactive on server: `{serverRoot}/{category}/{unit}/{gameId}/`
 - Bundle base name format: `englishtek.{grade}.{gameId-lower}`
+
+The folder path is auto-built from the catalog entry's `category`, `unit`, and `id` fields.
+Override it with an explicit `folder` field in the catalog entry if needed.
+Override the bundle file name with an explicit `bundleBaseName` field if needed.
 
 Required files per ID:
 - `englishtek.{grade}.{id-lower}.assets`
 - `englishtek.{grade}.{id-lower}.scenes`
 
-Example for `grade=grade1`, ID 107:
-- `/Interactive/107/englishtek.grade1.107.assets`
-- `/Interactive/107/englishtek.grade1.107.scenes`
+The gameId is lowercased as-is for file names. Use the full ID string with the `ID` prefix consistently.
+
+Example for `grade=grade1`, `category=grammar`, `unit=unit1`, ID107:
+- `http://localhost:8080/Interactive/grammar/unit1/ID107/englishtek.grade1.id107.assets`
+- `http://localhost:8080/Interactive/grammar/unit1/ID107/englishtek.grade1.id107.scenes`
 
 ## 3. Scene Structure Requirements
 
@@ -78,9 +84,10 @@ Filename recommendation (for fallback key inference):
 7. Ensure gameplay code reads data via `GameSession.CurrentManifest.GetXMLText(...)`.
 8. Assign assets/scenes to the correct AssetBundle names (`.assets`, `.scenes`).
 9. Build AssetBundles for the target platform.
-10. Upload files to server under `{gameId}` folder.
-11. Trigger load from Container using `RequestGameLoad("{id}")`.
-12. Validate logs and full flow: Title -> Instructions -> Game -> Feedback.
+10. Upload files to server under `{category}/{unit}/{id}/` (e.g. `grammar/unit1/ID107/`). If using a custom folder, set the `folder` field in the catalog entry to match.
+11. Add or update the catalog entry in `catalog.json` on the server with `id`, `title`, `category`, `unit`, `image`, and `enabled` fields.
+12. Trigger load from Container using `RequestGameLoad("{id}")`.
+13. Validate logs and full flow: Title -> Instructions -> Game -> Feedback.
 
 ## 7. Platform Build Rules
 
