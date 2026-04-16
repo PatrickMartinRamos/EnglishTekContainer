@@ -547,6 +547,14 @@ namespace EnglishTek.Core
             {
                 thumbnailLoader.TryLoadThumbnail(entry, thumbnail, controller);
             }
+            else if (thumbnailLoader != null && button != null)
+            {
+                Image buttonImage = button.GetComponent<Image>();
+                if (buttonImage != null)
+                {
+                    thumbnailLoader.TryLoadThumbnail(entry, buttonImage, controller);
+                }
+            }
 
             generatedEntryButtons.Add(buttonObject);
         }
