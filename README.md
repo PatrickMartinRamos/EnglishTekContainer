@@ -216,9 +216,3 @@ Resolution order:
 
 ## Recommended Operational Workflow
 
-1. Update interactive code/content.
-2. Build Android bundles.
-3. Upload bundles.
-4. Update catalog entry and bump `bundleVersion`.
-5. Rebuild/redeploy app only when stripping or assembly changes are introduced.
-6. Validate on fresh app data for release candidate checks.
