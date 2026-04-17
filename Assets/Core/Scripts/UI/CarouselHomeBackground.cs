@@ -89,8 +89,7 @@ namespace EnglishTek.Core
                 entries.Add(newEntries[i]);
             }
 
-            // Immediately show the first entry's home image.
-            HandleCenterChanged(0);
+            HandleCenterChanged(carousel != null ? carousel.CurrentCenterIndex : 0);
         }
 
         private void HandleCenterChanged(int index)

@@ -61,6 +61,19 @@ namespace EnglishTek.Core
         private RectTransform rectTransform;
         private int lastCenterIndex = -1;
 
+        public int CurrentCenterIndex
+        {
+            get
+            {
+                if (items.Count == 0)
+                {
+                    return -1;
+                }
+
+                return Mathf.Clamp(Mathf.RoundToInt(currentOffset), 0, items.Count - 1);
+            }
+        }
+
         // ------------------------------------------------------------------ Unity messages
 
         private void Awake()
@@ -82,12 +95,14 @@ namespace EnglishTek.Core
         {
             RefreshItems();
             PositionAll();
+            NotifyCenterIndexChangedIfNeeded();
         }
 
         private void OnTransformChildrenChanged()
         {
             RefreshItems();
             PositionAll();
+            NotifyCenterIndexChangedIfNeeded();
         }
 
         private void Update()
@@ -110,12 +125,7 @@ namespace EnglishTek.Core
                 PositionAll();
             }
 
-            int centerIndex = Mathf.RoundToInt(currentOffset);
-            if (centerIndex != lastCenterIndex)
-            {
-                lastCenterIndex = centerIndex;
-                OnCenterIndexChanged?.Invoke(centerIndex);
-            }
+            NotifyCenterIndexChangedIfNeeded();
         }
 
 #if UNITY_EDITOR
@@ -147,6 +157,7 @@ namespace EnglishTek.Core
             currentOffset = offsetAtDragStart - dragAccum / step;
             currentOffset = Mathf.Clamp(currentOffset, 0f, Mathf.Max(0f, items.Count - 1));
             PositionAll();
+            NotifyCenterIndexChangedIfNeeded();
         }
 
         public void OnEndDrag(PointerEventData eventData)
@@ -243,11 +254,27 @@ namespace EnglishTek.Core
                     items.Add(rt);
                 }
             }
+
+            float maxOffset = Mathf.Max(0f, items.Count - 1);
+            currentOffset = Mathf.Clamp(currentOffset, 0f, maxOffset);
+            targetOffset = Mathf.Clamp(targetOffset, 0f, maxOffset);
         }
 
         private float EffectiveDragStep()
         {
             return dragStep > 0f ? dragStep : itemWidth + spacing;
+        }
+
+        private void NotifyCenterIndexChangedIfNeeded()
+        {
+            int centerIndex = CurrentCenterIndex;
+            if (centerIndex == lastCenterIndex)
+            {
+                return;
+            }
+
+            lastCenterIndex = centerIndex;
+            OnCenterIndexChanged?.Invoke(centerIndex);
         }
     }
 }

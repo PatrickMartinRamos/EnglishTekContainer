@@ -65,6 +65,7 @@ namespace EnglishTek.Core
                 HideHomeBackground();
                 entryGroup.Hide(() =>
                 {
+                    SetUnitButtonsInteractable(true);
                     if (unitGroup != null) { unitGroup.Show(); }
                 });
                 return;
