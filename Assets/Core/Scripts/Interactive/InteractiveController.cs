@@ -167,9 +167,9 @@ namespace EnglishTek.Core
             // script/assembly mismatch can emit missing-script warnings in runtime logs.
             // Use scene-bundle fallback to determine startup scene and continue gameplay.
 
-            Debug.Log("[Download] Assets in bundle: " + string.Join(", ", assetNames));
+            // Debug.Log("[Download] Assets in bundle: " + string.Join(", ", assetNames));
             string[] scenePaths = GameSession.CurrentSceneBundle.GetAllScenePaths();
-            Debug.Log("[Download] Scenes in bundle: " + string.Join(", ", scenePaths));
+            // Debug.Log("[Download] Scenes in bundle: " + string.Join(", ", scenePaths));
 
             if (manifest == null)
             {
@@ -345,8 +345,21 @@ namespace EnglishTek.Core
                 folderName = effectiveFolder,
                 selectedGrade = effectiveGrade,
                 bundleFileNameBase = effectiveBundleBase,
-                cacheKey = NormalizeCacheKey(gameId)
+                cacheKey = BuildCacheKey(gameId, effectiveBundleBase, entry)
             };
+        }
+
+        private string BuildCacheKey(string gameId, string bundleBaseName, InteractiveCatalogEntry entry)
+        {
+            string normalizedId = NormalizeCacheKey(gameId);
+            string normalizedBase = NormalizeCacheKey(bundleBaseName);
+            string version = entry != null ? entry.bundleVersion : null;
+            if (string.IsNullOrWhiteSpace(version))
+            {
+                return normalizedId + "_" + normalizedBase;
+            }
+
+            return normalizedId + "_" + normalizedBase + "_" + NormalizeCacheKey(version);
         }
 
         private string BuildDefaultBundleBaseName(string selectedGrade, string gameId)
@@ -424,7 +437,7 @@ namespace EnglishTek.Core
                 return "unknown";
             }
 
-            return value.Trim().Replace("/", "_").Replace("\\", "_");
+            return value.Trim().Replace("/", "_").Replace("\\", "_").Replace(" ", "_");
         }
 
         // Encodes each slash-separated segment of a path for use in a URL.
@@ -479,7 +492,8 @@ namespace EnglishTek.Core
             req.SendWebRequest();
             while (!req.isDone)
             {
-                debugText.text = "[Download] " + bundleLabel + " progress: " + Mathf.RoundToInt(req.downloadProgress * 100f) + "%";
+                    if (debugText != null)
+                        debugText.text = "[Download] " + bundleLabel + " progress: " + Mathf.RoundToInt(req.downloadProgress * 100f) + "%";
                 yield return null;
             }
             Debug.Log("[Download] " + bundleLabel + " progress: 100%");

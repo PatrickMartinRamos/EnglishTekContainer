@@ -15,6 +15,7 @@ namespace EnglishTek.Core
         public string folder;
         public string grade;
         public string bundleBaseName;
+        public string bundleVersion;
         public bool enabled = true;
 
         public string DisplayName

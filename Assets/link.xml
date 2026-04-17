@@ -1,0 +1,6 @@
+<linker>
+  <assembly fullname="Core" preserve="all"/>
+  <assembly fullname="Assembly-CSharp" preserve="all"/>
+  <assembly fullname="ID106" preserve="all"/>
+  <assembly fullname="ID213" preserve="all"/>
+</linker>

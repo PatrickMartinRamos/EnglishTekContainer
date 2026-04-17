@@ -1,64 +1,87 @@
 using UnityEngine;
 
-namespace EnglishTek.Core
+[RequireComponent(typeof(Camera))]
+public class AspectRatioEnforcer : MonoBehaviour
 {
-    [RequireComponent(typeof(Camera))]
-    public class AspectRatioEnforcer : MonoBehaviour
+    [SerializeField] private float targetWidth = 800f;
+    [SerializeField] private float targetHeight = 600f;
+
+    private Camera targetCamera;
+    private Camera barCamera;
+    private int lastScreenWidth;
+    private int lastScreenHeight;
+
+    void Awake()
     {
-        [SerializeField] private float targetAspectWidth = 16f;
-        [SerializeField] private float targetAspectHeight = 9f;
+        targetCamera = GetComponent<Camera>();
+        CreateBarCamera();
+    }
 
-        private float lastScreenWidth;
-        private float lastScreenHeight;
+    void Start()
+    {
+        ApplyAspect();
+    }
 
-        private void Start()
+    void Update()
+    {
+        if (Screen.width != lastScreenWidth || Screen.height != lastScreenHeight)
         {
-            Apply();
+            ApplyAspect();
+        }
+    }
+
+    // A second camera at depth -2 fills the whole screen with black.
+    // The main camera renders on top of it at depth -1, covering only the 4:3 area.
+    // The areas outside the 4:3 rect show the black from the bar camera.
+    private void CreateBarCamera()
+    {
+        GameObject barGO = new GameObject("BarCamera");
+        barGO.transform.SetParent(transform);
+        barCamera = barGO.AddComponent<Camera>();
+        barCamera.clearFlags = CameraClearFlags.SolidColor;
+        barCamera.backgroundColor = Color.black;
+        barCamera.cullingMask = 0; // renders nothing, just clears to black
+        barCamera.depth = targetCamera.depth - 1;
+        barCamera.rect = new Rect(0f, 0f, 1f, 1f);
+        barCamera.orthographic = true;
+    }
+
+    private void ApplyAspect()
+    {
+        if (targetCamera == null)
+        {
+            return;
         }
 
-        private void Update()
+        lastScreenWidth = Screen.width;
+        lastScreenHeight = Screen.height;
+
+        float safeWidth = Mathf.Max(1f, targetWidth);
+        float safeHeight = Mathf.Max(1f, targetHeight);
+        float targetAspect = safeWidth / safeHeight;
+        float windowAspect = (float)Screen.width / Screen.height;
+        float scale = windowAspect / targetAspect;
+
+        Rect rect = new Rect();
+
+        if (scale < 1.0f)
         {
-            if (!Mathf.Approximately(Screen.width, lastScreenWidth) ||
-                !Mathf.Approximately(Screen.height, lastScreenHeight))
-            {
-                Apply();
-            }
+            // Screen is taller than 4:3 -> bars on top/bottom.
+            rect.width = 1.0f;
+            rect.height = scale;
+            rect.x = 0f;
+            rect.y = (1.0f - scale) / 2.0f;
+        }
+        else
+        {
+            // Screen is wider than 4:3 -> bars on left/right.
+            float scaleWidth = 1.0f / scale;
+            rect.width = scaleWidth;
+            rect.height = 1.0f;
+            rect.x = (1.0f - scaleWidth) / 2.0f;
+            rect.y = 0f;
         }
 
-        private void Apply()
-        {
-            lastScreenWidth  = Screen.width;
-            lastScreenHeight = Screen.height;
-
-            float targetAspect = targetAspectWidth / targetAspectHeight;
-            float screenAspect = (float)Screen.width / Screen.height;
-            float scale = screenAspect / targetAspect;
-
-            Camera cam = GetComponent<Camera>();
-            cam.backgroundColor = Color.black;
-
-            if (Mathf.Approximately(scale, 1f))
-            {
-                // Perfect match — full viewport
-                cam.rect = new Rect(0f, 0f, 1f, 1f);
-            }
-            else if (scale < 1f)
-            {
-                // Screen is taller than target — pillarbox (black bars top/bottom)
-                float offsetY = (1f - scale) / 2f;
-                cam.rect = new Rect(0f, offsetY, 1f, scale);
-            }
-            else
-            {
-                // Screen is wider than target — letterbox (black bars left/right)
-                float scaleWidth = 1f / scale;
-                float offsetX = (1f - scaleWidth) / 2f;
-                cam.rect = new Rect(offsetX, 0f, scaleWidth, 1f);
-            }
-
-            Debug.Log("[AspectRatio] Screen: " + Screen.width + "x" + Screen.height +
-                      " | Scale: " + scale.ToString("F3") +
-                      " | Rect: " + cam.rect);
-        }
+        targetCamera.rect = rect;
     }
 }
