@@ -360,7 +360,9 @@ namespace EnglishTek.Grade2.ID232
 			yield return new WaitForSeconds(2f);
 			Intro = true;
         }
+#if UNITY_WEBGL
 		[DllImport("__Internal")]
 		private static extern string platformCheck();
+#endif
 	}
 }

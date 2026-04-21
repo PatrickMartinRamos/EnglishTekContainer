@@ -15,12 +15,14 @@ public class SubmitScore : MonoBehaviour {
     const string LMSv2BaseURL = "https://tekteachlms-api.com/api";
     //[SerializeField]
     //private string lessonCode;
+#if UNITY_WEBGL
     [DllImport("__Internal")]
     private static extern string GetURLFromPage();
     [DllImport("__Internal")]
 	private static extern void openWindow(string url);
     [DllImport("__Internal")]
 	private static extern void closeWindow();
+#endif
     private string submissionDate,URL,authKey,absoluteURL,parameters,studentID,gameID,classID;
     private string[] parametersData;
     private string[] lessonData;
@@ -209,7 +211,7 @@ public class SubmitScore : MonoBehaviour {
 
     public void OpenImage(string url){
         //Open image/pdf in new tab to prevent overwriting of current page
-        #if !UNITY_EDITOR
+        #if UNITY_WEBGL
             openWindow(universalUrl+url);
             //Application.ExternalEval("window.open("universalUrl+url+"\",\"_blank\")");
         #else
