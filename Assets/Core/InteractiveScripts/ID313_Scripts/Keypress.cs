@@ -69,8 +69,10 @@ namespace EnglishTek.Grade1.ID313
     			capslock.GetComponent<Image> ().color = Color.white;
     		}
     	}
-    	[DllImport("__Internal")]
+    	#if !UNITY_EDITOR && UNITY_WEBGL
+	[DllImport("__Internal")]
     	private static extern string platformCheck();
+	#endif
 
     }
 }

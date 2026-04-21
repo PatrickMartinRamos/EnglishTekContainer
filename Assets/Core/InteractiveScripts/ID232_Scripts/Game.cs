@@ -361,8 +361,10 @@ namespace EnglishTek.Grade2.ID232
 			Intro = true;
         }
 #if UNITY_WEBGL
+		#if !UNITY_EDITOR && UNITY_WEBGL
 		[DllImport("__Internal")]
 		private static extern string platformCheck();
+		#endif
 #endif
 	}
 }
