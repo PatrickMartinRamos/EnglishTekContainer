@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Activity>
+	<Item>
+		<Question>I see two (dog) in the park.</Question>
+		<Correct>dogs</Correct>
+		<Wrong>dogses</Wrong>
+	</Item>
+	<Item>
+		<Question>We washed the (cup) after lunch.</Question>
+		<Correct>cups</Correct>
+		<Wrong>caps</Wrong>
+	</Item>
+	<Item>
+		<Question>The (map) are on the wall.</Question>
+		<Correct>maps</Correct>
+		<Wrong>mapses</Wrong>
+	</Item>
+	<Item>
+		<Question>I put my books on the (desk).</Question>
+		<Correct>desks</Correct>
+		<Wrong>deskses</Wrong>
+	</Item>
+	<Item>
+		<Question>The (fish) are in the pond.</Question>
+		<Correct>fishes</Correct>
+		<Wrong>fishs</Wrong>
+	</Item>
+	<Item>
+		<Question>I tied my (lace) before I ran.</Question>
+		<Correct>laces</Correct>
+		<Wrong>laceses</Wrong>
+	</Item>
+	<Item>
+		<Question>The (toy) are in the basket.</Question>
+		<Correct>toys</Correct>
+		<Wrong>toyses</Wrong>
+	</Item>
+	<Item>
+		<Question>We picked ripe (mango) at the farm.</Question>
+		<Correct>mangoes</Correct>
+		<Wrong>mangos</Wrong>
+	</Item>
+	<Item>
+		<Question>The (cat) are sleeping in the box.</Question>
+		<Correct>cats</Correct>
+		<Wrong>catses</Wrong>
+	</Item>
+	<Item>
+		<Question>I counted the (coin) on the floor.</Question>
+		<Correct>coins</Correct>
+		<Wrong>coinses</Wrong>
+	</Item>
+</Activity>

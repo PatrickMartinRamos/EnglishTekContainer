@@ -1,0 +1,52 @@
+<Activity>
+	<Item>
+		<Question>The music plays. We are ____ with our feet.</Question>
+		<Correct>dancing</Correct>
+		<Wrong>singing</Wrong>
+	</Item>
+	<Item>
+		<Question>I say 1, 2, 3, 4. I am ____.</Question>
+		<Correct>counting</Correct>
+		<Wrong>coloring</Wrong>
+	</Item>
+	<Item>
+		<Question>My picture needs red and blue. I am ____.</Question>
+		<Correct>coloring</Correct>
+		<Wrong>counting</Wrong>
+	</Item>
+	<Item>
+		<Question>I follow the line on paper. I am ____.</Question>
+		<Correct>tracing</Correct>
+		<Wrong>drawing</Wrong>
+	</Item>
+	<Item>
+		<Question>We have 2 marbles. We get 1 more. We are ____.</Question>
+		<Correct>adding</Correct>
+		<Wrong>taking</Wrong>
+	</Item>
+	<Item>
+		<Question>We have 5 stickers. We give 2 away. We are ____.</Question>
+		<Correct>taking</Correct>
+		<Wrong>adding</Wrong>
+	</Item>
+	<Item>
+		<Question>I touch the desk softly with my finger. I am ____.</Question>
+		<Correct>tapping</Correct>
+		<Wrong>clapping</Wrong>
+	</Item>
+	<Item>
+		<Question>My friend cannot reach the door. I am ____.</Question>
+		<Correct>helping</Correct>
+		<Wrong>yelling</Wrong>
+	</Item>
+	<Item>
+		<Question>Look: 9 − 4. The number gets smaller. We are ____.</Question>
+		<Correct>taking</Correct>
+		<Wrong>adding</Wrong>
+	</Item>
+	<Item>
+		<Question>Look: 3 + 5. The number gets bigger. We are ____.</Question>
+		<Correct>adding</Correct>
+		<Wrong>taking</Wrong>
+	</Item>
+</Activity>

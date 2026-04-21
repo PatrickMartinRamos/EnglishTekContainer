@@ -1,0 +1,5 @@
+<Feedback>
+	<Perfect>You sorted all the robots correctly! Great job!</Perfect>
+	<Average>You sorted most of the robots correctly! Good work!</Average>
+	<Fail>You need to be more careful in sorting out the robots. Try again.</Fail>
+</Feedback>

@@ -1,0 +1,5 @@
+<Feedback>
+  <Perfect>You whacked all the poisonous mushrooms! Nice work!</Perfect>
+  <Average>You whacked most of the poisonous mushrooms! Good job!</Average>
+  <Fail>Sorry, you failed to protect the flowers.</Fail>
+</Feedback>

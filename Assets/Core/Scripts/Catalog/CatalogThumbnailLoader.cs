@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -74,31 +75,30 @@ namespace EnglishTek.Core
 
         private IEnumerator LoadThumbnailRoutine(string imageUrl, RawImage target)
         {
-            UnityWebRequest request = UnityWebRequestTexture.GetTexture(imageUrl);
-            yield return request.SendWebRequest();
-
-            if (request.isNetworkError || request.isHttpError)
+            yield return StartCoroutine(FetchTexture(imageUrl, texture =>
             {
-                Debug.LogWarning("Catalog thumbnail download failed: " + request.error + " | URL: " + imageUrl);
-                yield break;
-            }
-
-            Texture2D texture = DownloadHandlerTexture.GetContent(request);
-            if (texture == null)
-            {
-                yield break;
-            }
-
-            loadedTextures.Add(texture);
-
-            if (target != null)
-            {
-                target.texture = texture;
-                target.color = Color.white;
-            }
+                if (target != null)
+                {
+                    target.texture = texture;
+                    target.color = Color.white;
+                }
+            }));
         }
 
         private IEnumerator LoadThumbnailImageRoutine(string imageUrl, Image target)
+        {
+            yield return StartCoroutine(FetchTexture(imageUrl, texture =>
+            {
+                if (target != null)
+                {
+                    Sprite sprite = Sprite.Create(texture, new Rect(0f, 0f, texture.width, texture.height), new Vector2(0.5f, 0.5f));
+                    target.sprite = sprite;
+                    target.color = Color.white;
+                }
+            }));
+        }
+
+        private IEnumerator FetchTexture(string imageUrl, System.Action<Texture2D> onLoaded)
         {
             UnityWebRequest request = UnityWebRequestTexture.GetTexture(imageUrl);
             yield return request.SendWebRequest();
@@ -110,19 +110,10 @@ namespace EnglishTek.Core
             }
 
             Texture2D texture = DownloadHandlerTexture.GetContent(request);
-            if (texture == null)
-            {
-                yield break;
-            }
+            if (texture == null) yield break;
 
             loadedTextures.Add(texture);
-
-            if (target != null)
-            {
-                Sprite sprite = Sprite.Create(texture, new Rect(0f, 0f, texture.width, texture.height), new Vector2(0.5f, 0.5f));
-                target.sprite = sprite;
-                target.color = Color.white;
-            }
+            onLoaded(texture);
         }
     }
 }

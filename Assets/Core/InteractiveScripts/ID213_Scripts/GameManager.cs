@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using UnityEngine;
 using System.Linq;
 using System.Xml;
-using EnglishTek.Core;
 
 namespace EnglishTek.Grade1.ID213
 {
@@ -48,25 +47,19 @@ namespace EnglishTek.Grade1.ID213
 
         public static void GenerateItem()
         {
-            string manifestKey = "";
+            string instructions = string.Empty;
+            string PATH = "XML/" + GameManager.GameID + "/";
             switch (Difficulty)
             {
-                case "Practice": manifestKey = "ItemBankPractice_ET1ID213"; break;
-                case "Workout": manifestKey = "ItembankWorkout_ET1ID213"; break;
-                case "Quiz": manifestKey = "ItembankQuiz_ET1ID213"; break;
+                case "Practice": PATH += "Itembank_Practice"; break;
+                case "Workout": PATH += "Itembank_Workout"; break;
+                case "Quiz": PATH += "Itembank_Quiz"; break;
             }
             string NODE = "Activity/Item";
 
-            string xmlContent = GameSession.CurrentManifest.GetXMLText(manifestKey);
-
-            if(string.IsNullOrEmpty(xmlContent))
-            {
-                Debug.LogError("XML content is empty for manifest key: " + manifestKey);
-                return;
-            }
-
+            TextAsset textAsset = (TextAsset)Resources.Load(PATH, typeof(TextAsset));
             XmlDocument xmlDoc = new XmlDocument();
-            xmlDoc.LoadXml(xmlContent);
+            xmlDoc.LoadXml(textAsset.text);
 
             Questions = new List<string>();
             Corrects = new List<string>();
@@ -106,21 +99,27 @@ namespace EnglishTek.Grade1.ID213
 
         public static string Feedback()
         {
-            // replace this with the correct interactive code
-            string xmlContent = GameSession.CurrentManifest.GetXMLText("Feedback_ET1ID213");
-            
-            XmlDocument xmlDoc = new XmlDocument();
-            xmlDoc.LoadXml(xmlContent);
-
+            string instructions = string.Empty;
+            string PATH = "XML/" + GameManager.GameID + "/Feedback";
             string NODE = "Feedback/";
-            var percentage = (float) Score / TotalItem * 100;
+            string feedback = string.Empty;
 
-            if (percentage >= 100) NODE += "Perfect";
-            else if (percentage > 70) NODE += "Average";
-            else NODE += "Fail";
+            var percentage = (float)Score / TotalItem;
+            percentage = percentage * 100;
 
-            string feedback = xmlDoc.SelectSingleNode(NODE).InnerText + 
-                             "\nYour score: " + Score + "/" + TotalItem;
+            if (percentage >= 100)
+                NODE += "Perfect";
+            else if (percentage < 100 && percentage > 70)
+                NODE += "Average";
+            else if (percentage < 70)
+                NODE += "Fail";
+
+            TextAsset textAsset = (TextAsset)Resources.Load(PATH, typeof(TextAsset));
+            XmlDocument xmlDoc = new XmlDocument();
+            xmlDoc.LoadXml(textAsset.text);
+
+            feedback = xmlDoc.SelectSingleNode(NODE).InnerText +
+                "\nYour score: " + Score + "/" + TotalItem;
             return feedback;
         }
 
@@ -136,14 +135,21 @@ namespace EnglishTek.Grade1.ID213
 
         static string GetInstructions()
         {
-            // replace this with the correct interactive code
-            string xmlContent = GameSession.CurrentManifest.GetXMLText("Instruction_ET1ID213");
-            
+            string instructions = string.Empty;
+            string PATH = "XML/" + GameManager.GameID + "/Instruction";
+            string NODE = "Instruction";
+            TextAsset textAsset = (TextAsset)Resources.Load(PATH, typeof(TextAsset));
             XmlDocument xmlDoc = new XmlDocument();
-            xmlDoc.LoadXml(xmlContent);
+            xmlDoc.LoadXml(textAsset.text);
 
-            XmlNode node = xmlDoc.SelectSingleNode("Instruction");
-            return node != null ? node.InnerText : "No Instructions Found";
+            foreach (XmlNode node in xmlDoc.SelectNodes(NODE))
+            {
+                foreach (XmlNode innerNode in node.ChildNodes)
+                {
+                    instructions = innerNode.InnerText.ToString();
+                }
+            }
+            return instructions;
         }
         #endregion
     }

@@ -355,7 +355,6 @@ namespace EnglishTek.Core
                 return;
             }
 
-            int addedCount = 0;
             for (int index = 0; index < cachedInteractives.Count; index++)
             {
                 InteractiveCatalogEntry entry = cachedInteractives[index];
@@ -396,7 +395,6 @@ namespace EnglishTek.Core
                 }
 
                 renderedEntries.Add(entry);
-                addedCount++;
             }
 
             if (entryHomeBackground != null && homeBackgroundEnabled)
@@ -406,7 +404,7 @@ namespace EnglishTek.Core
 
             UpdateEntryPlayButtons();
 
-            if (addedCount == 0)
+            if (renderedEntries.Count == 0)
             {
                 if (string.IsNullOrEmpty(selectedUnit))
                 {
@@ -750,10 +748,7 @@ namespace EnglishTek.Core
                 OnUnitSelected();
             }
 
-            if (hasChanged || triggerNavigation)
-            {
-                RenderFilteredEntries();
-            }
+            RenderFilteredEntries();
         }
 
         private void UpdateUnitButtonsInteractable()

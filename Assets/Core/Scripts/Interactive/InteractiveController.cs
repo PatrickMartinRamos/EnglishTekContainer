@@ -16,10 +16,14 @@ namespace EnglishTek.Core
         [SerializeField] private string catalogFileName = "catalog.json";
         [SerializeField] private string defaultCategory = string.Empty;
         [SerializeField] private string defaultUnit = string.Empty;
+        // Prefix used when auto-generating bundle file names: {bundlePrefix}.{grade}.{id}
+        // e.g. "englishtek" → englishtek.grade1.id106  |  "sciencetek" → sciencetek.grade1.id106
+        [SerializeField] private string bundlePrefix = "englishtek";
         [SerializeField] private bool refreshCatalogOnStart = true;
         [SerializeField] private ContainerReturnOverlay overlayPrefab = null;
         [SerializeField] private OverlayButtonCorner overlayButtonCorner = OverlayButtonCorner.TopLeft;
         [SerializeField] private Vector2 overlayButtonPadding = new Vector2(10f, 10f);
+        [SerializeField] private TextMeshProUGUI debugText;
 
         private readonly List<InteractiveCatalogEntry> availableInteractives = new List<InteractiveCatalogEntry>();
         private Coroutine catalogLoadRoutine;
@@ -32,7 +36,6 @@ namespace EnglishTek.Core
         {
             public string requestedId;
             public string folderName;
-            public string selectedGrade;
             public string bundleFileNameBase;
             public string cacheKey;
         }
@@ -116,7 +119,7 @@ namespace EnglishTek.Core
             availableInteractives.Sort((left, right) => string.Compare(left.DisplayName, right.DisplayName, StringComparison.OrdinalIgnoreCase));
             CatalogUpdated?.Invoke(availableInteractives);
         }
-        [SerializeField] private TextMeshProUGUI debugText;
+
         private IEnumerator DownloadAndStartRoutine(DownloadTarget target)
         {
             string gameId = target.requestedId;
@@ -157,33 +160,22 @@ namespace EnglishTek.Core
             GameSession.CurrentAssetBundle = loadedAssetBundle;
             GameSession.CurrentSceneBundle = loadedSceneBundle;
 
-            // Load Manifest
-            // IMPORTANT: Ensure the string "Manifest_" + gameId matches asset name in Unity
-
-            InteractiveManifest manifest = null;
+            // Derive first scene from the scene bundle.
+            // Direct manifest deserialization from external bundles is skipped to avoid
+            // missing-script warnings caused by script/assembly mismatches at runtime.
             string[] assetNames = GameSession.CurrentAssetBundle.GetAllAssetNames();
+            string fallbackSceneName = TryGetFirstSceneNameFromSceneBundle(GameSession.CurrentSceneBundle);
+            InteractiveManifest manifest = null;
 
-            // Skip direct manifest asset deserialization from external bundles because a
-            // script/assembly mismatch can emit missing-script warnings in runtime logs.
-            // Use scene-bundle fallback to determine startup scene and continue gameplay.
-
-            // Debug.Log("[Download] Assets in bundle: " + string.Join(", ", assetNames));
-            string[] scenePaths = GameSession.CurrentSceneBundle.GetAllScenePaths();
-            // Debug.Log("[Download] Scenes in bundle: " + string.Join(", ", scenePaths));
-
-            if (manifest == null)
+            if (!string.IsNullOrEmpty(fallbackSceneName))
             {
-                string fallbackSceneName = TryGetFirstSceneNameFromSceneBundle(GameSession.CurrentSceneBundle);
-                if (!string.IsNullOrEmpty(fallbackSceneName))
-                {
-                    manifest = ScriptableObject.CreateInstance<InteractiveManifest>();
-                    manifest.firstSceneName = fallbackSceneName;
-                    Debug.Log("[Download] Recovered manifest using scene-bundle fallback. Scene: " + fallbackSceneName);
-                }
-                else
-                {
-                    Debug.LogError("[Download] No scenes found in scene bundle! Bundle may be built for wrong platform.");
-                }
+                manifest = ScriptableObject.CreateInstance<InteractiveManifest>();
+                manifest.firstSceneName = fallbackSceneName;
+                Debug.Log("[Download] Recovered manifest using scene-bundle fallback. Scene: " + fallbackSceneName);
+            }
+            else
+            {
+                Debug.LogError("[Download] No scenes found in scene bundle! Bundle may be built for wrong platform.");
             }
 
             if (manifest != null)
@@ -343,7 +335,6 @@ namespace EnglishTek.Core
             {
                 requestedId = gameId,
                 folderName = effectiveFolder,
-                selectedGrade = effectiveGrade,
                 bundleFileNameBase = effectiveBundleBase,
                 cacheKey = BuildCacheKey(gameId, effectiveBundleBase, entry)
             };
@@ -365,7 +356,8 @@ namespace EnglishTek.Core
         private string BuildDefaultBundleBaseName(string selectedGrade, string gameId)
         {
             string safeGrade = selectedGrade.ToLowerInvariant().Replace(" ", string.Empty);
-            return "englishtek." + safeGrade + "." + gameId.ToLowerInvariant();
+            string prefix = string.IsNullOrWhiteSpace(bundlePrefix) ? "englishtek" : bundlePrefix.Trim().ToLowerInvariant();
+            return prefix + "." + safeGrade + "." + gameId.ToLowerInvariant();
         }
 
         private string BuildDefaultFolderPath(string selectedGrade, string categoryName, string unitName, string gameId)

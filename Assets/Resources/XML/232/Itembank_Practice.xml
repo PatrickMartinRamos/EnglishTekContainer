@@ -1,0 +1,52 @@
+<Activity>
+	<Item>
+		<Question>What do you do with a book?</Question>
+		<Correct>reading</Correct>
+		<Wrong>writing</Wrong>
+	</Item>
+	<Item>
+		<Question>What do you do with a crayon?</Question>
+		<Correct>drawing</Correct>
+		<Wrong>building</Wrong>
+	</Item>
+	<Item>
+		<Question>What should you do with school rules?</Question>
+		<Correct>following</Correct>
+		<Wrong>forgetting</Wrong>
+	</Item>
+	<Item>
+		<Question>What do you do with a uniform?</Question>
+		<Correct>wearing</Correct>
+		<Wrong>tearing</Wrong>
+	</Item>
+	<Item>
+		<Question>What do you do with glue?</Question>
+		<Correct>sticking</Correct>
+		<Wrong>rubbing</Wrong>
+	</Item>
+	<Item>
+		<Question>What do you do with a language?</Question>
+		<Correct>talking</Correct>
+		<Wrong>walking</Wrong>
+	</Item>
+	<Item>
+		<Question>What do you do with chalk?</Question>
+		<Correct>writing</Correct>
+		<Wrong>sticking</Wrong>
+	</Item>
+	<Item>
+		<Question>What do you do with scissors?</Question>
+		<Correct>cutting</Correct>
+		<Wrong>folding</Wrong>
+	</Item>
+	<Item>
+		<Question>What do you do in a library?</Question>
+		<Correct>reading</Correct>
+		<Wrong>resting</Wrong>
+	</Item>
+	<Item>
+		<Question>What do you do with a ruler?</Question>
+		<Correct>measuring</Correct>
+		<Wrong>matching</Wrong>
+	</Item>
+</Activity>

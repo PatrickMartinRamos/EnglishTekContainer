@@ -5,6 +5,20 @@ namespace EnglishTek.Core
 {
     internal static class CatalogFilter
     {
+        // Returns the normalized category for an entry, defaulting to "general".
+        private static string EffectiveCategory(string raw)
+        {
+            string normalized = CatalogStringHelper.NormalizeCategory(raw);
+            return string.IsNullOrEmpty(normalized) ? "general" : normalized;
+        }
+
+        // Returns the normalized unit for an entry, defaulting to "general".
+        private static string EffectiveUnit(string raw)
+        {
+            string normalized = CatalogStringHelper.NormalizeUnit(raw);
+            return string.IsNullOrEmpty(normalized) ? "general" : normalized;
+        }
+
         internal static bool HasCategory(IReadOnlyList<InteractiveCatalogEntry> interactives, string category)
         {
             if (string.IsNullOrEmpty(category))
@@ -15,18 +29,9 @@ namespace EnglishTek.Core
             for (int index = 0; index < interactives.Count; index++)
             {
                 InteractiveCatalogEntry entry = interactives[index];
-                if (entry == null)
-                {
-                    continue;
-                }
+                if (entry == null) continue;
 
-                string entryCategory = CatalogStringHelper.NormalizeCategory(entry.category);
-                if (string.IsNullOrEmpty(entryCategory))
-                {
-                    entryCategory = "general";
-                }
-
-                if (string.Equals(entryCategory, category, StringComparison.OrdinalIgnoreCase))
+                if (string.Equals(EffectiveCategory(entry.category), category, StringComparison.OrdinalIgnoreCase))
                 {
                     return true;
                 }
@@ -43,12 +48,7 @@ namespace EnglishTek.Core
             for (int index = 0; index < interactives.Count; index++)
             {
                 InteractiveCatalogEntry entry = interactives[index];
-                string category = CatalogStringHelper.NormalizeCategory(entry != null ? entry.category : null);
-                if (string.IsNullOrEmpty(category))
-                {
-                    category = "general";
-                }
-
+                string category = EffectiveCategory(entry != null ? entry.category : null);
                 if (seen.Add(category))
                 {
                     categories.Add(category);
@@ -71,28 +71,14 @@ namespace EnglishTek.Core
             for (int index = 0; index < interactives.Count; index++)
             {
                 InteractiveCatalogEntry entry = interactives[index];
-                if (entry == null)
+                if (entry == null) continue;
+
+                if (!string.Equals(EffectiveCategory(entry.category), category, StringComparison.OrdinalIgnoreCase))
                 {
                     continue;
                 }
 
-                string entryCategory = CatalogStringHelper.NormalizeCategory(entry.category);
-                if (string.IsNullOrEmpty(entryCategory))
-                {
-                    entryCategory = "general";
-                }
-
-                if (!string.Equals(entryCategory, category, StringComparison.OrdinalIgnoreCase))
-                {
-                    continue;
-                }
-
-                string unit = CatalogStringHelper.NormalizeUnit(entry.unit);
-                if (string.IsNullOrEmpty(unit))
-                {
-                    unit = "general";
-                }
-
+                string unit = EffectiveUnit(entry.unit);
                 if (seen.Add(unit))
                 {
                     units.Add(unit);

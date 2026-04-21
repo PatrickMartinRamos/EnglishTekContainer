@@ -175,7 +175,7 @@ namespace EnglishTek.Core
             {
                 elapsed += Time.deltaTime;
                 float t = EaseOutQuad(Mathf.Clamp01(elapsed / duration));
-                TickShow(t, startPos, startScale);
+                TickShow(t, startPos);
                 yield return null;
             }
 
@@ -257,7 +257,7 @@ namespace EnglishTek.Core
             }
         }
 
-        private void TickShow(float t, Vector2 startPos, Vector3 startScale)
+        private void TickShow(float t, Vector2 startPos)
         {
             switch (animationIn)
             {

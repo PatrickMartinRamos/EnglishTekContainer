@@ -1,0 +1,5 @@
+<Feedback>
+	<Perfect>You collected all the starfishes and seashells. Great!</Perfect>
+	<Average>You got many starfishes and seashells. Good!</Average>
+	<Fail>Collect more starfishes and seashells.</Fail>
+</Feedback>

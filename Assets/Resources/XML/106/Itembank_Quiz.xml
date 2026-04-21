@@ -1,0 +1,34 @@
+<Activity>
+<Item><Question>Please water the plants every day.</Question><Correct>plants/day</Correct><Wrong1>plants/water</Wrong1><Wrong2>water/day</Wrong2></Item>
+<Item><Question>We have cheese/meatball/and bread in the kitchen.</Question><Correct>cheese/bread</Correct><Wrong1>kitchen/have</Wrong1><Wrong2>meatball/and</Wrong2></Item>
+<Item><Question>Please clean your hands with alcohol. </Question><Correct>hands/alcohol</Correct><Wrong1>alcohol/clean</Wrong1><Wrong2>hands/clean</Wrong2></Item>
+<Item><Question>The nurse in our school told me to eat breakfast.</Question><Correct>nurse/school</Correct><Wrong1>school/told</Wrong1><Wrong2>breakfast/eat</Wrong2></Item>
+<Item><Question>The store sells skin products.</Question><Correct>store/products</Correct><Wrong1>skin/sells</Wrong1><Wrong2>products/sells</Wrong2></Item>
+<Item><Question>How do I fry chicken?</Question><Correct>chicken</Correct><Wrong1>fry</Wrong1><Wrong2>how</Wrong2></Item>
+<Item><Question>I found a bar of soap in the comfort room.</Question><Correct>soap/room</Correct><Wrong1>bar/found</Wrong1><Wrong2>comfort/found</Wrong2></Item>
+<Item><Question>Bring towels and toothbrush for them tomorrow.</Question><Correct>towels/toothbrush</Correct><Wrong1>toothbrush/them</Wrong1><Wrong2>towels/bring</Wrong2></Item>
+<Item><Question>Cover your mouth using handkerchief or tissue.</Question><Correct>mouth/handkerchief</Correct><Wrong1>mouth/sneeze</Wrong1><Wrong2>tissue/cover</Wrong2></Item>
+<Item><Question>Brush your teeth every day.</Question><Correct>teeth</Correct><Wrong1>every day</Wrong1><Wrong2>brush</Wrong2></Item>
+<Item><Question>Comb your hair.</Question><Correct>hair</Correct><Wrong1>comb</Wrong1><Wrong2>your</Wrong2></Item>
+<Item><Question>Do not eat too much candies and chocolates.</Question><Correct>candies/chocolates</Correct><Wrong1>candies/eat</Wrong1><Wrong2>chocolates/much</Wrong2></Item>
+<Item><Question>I fold my clothes every week.</Question><Correct>clothes</Correct><Wrong1>fold</Wrong1><Wrong2>every</Wrong2></Item>
+<Item><Question>My cousin and I walk my dog in the park.</Question><Correct>dog/park</Correct><Wrong1>dog/walk</Wrong1><Wrong2>park/walk</Wrong2></Item>
+<Item><Question>I don't drink coffee or soda.</Question><Correct>coffee/soda</Correct><Wrong1>coffee/drink</Wrong1><Wrong2>soda/drink</Wrong2></Item>
+<Item><Question>I go to the church with my family weekly.</Question><Correct>church/family</Correct><Wrong1>church/go</Wrong1><Wrong2>family/weekly</Wrong2></Item>
+<Item><Question>I eat carrots for healthy eyes.</Question><Correct>carrot/eyes</Correct><Wrong1>carrot/good</Wrong1><Wrong2>eyes/healthy</Wrong2></Item>
+<Item><Question>My brother bought me plastic cover.</Question><Correct>brother/cover</Correct><Wrong1>cover/helped</Wrong1><Wrong2>cover/bought</Wrong2></Item>
+<Item><Question>We use a small brush in our art class.</Question><Correct>brush/class</Correct><Wrong1>brush/small</Wrong1><Wrong2>class/use</Wrong2></Item>
+<Item><Question>The shampoo smells like aloe vera.</Question><Correct>shampoo/aloe vera</Correct><Wrong1>shampoo/smells</Wrong1><Wrong2>aloe vera/smells</Wrong2></Item>
+<Item><Question>Troy loves the smell of freshly-cut watermelons.</Question><Correct>smell/watermelons</Correct><Wrong1>watermelons/smell</Wrong1><Wrong2>watermelons/loves</Wrong2></Item>
+<Item><Question>The car is loaded with cabbage.</Question><Correct>car/cabbage</Correct><Wrong1>car/loaded</Wrong1><Wrong2>cabbage/with</Wrong2></Item>
+<Item><Question>My grandparents cook pork on Sundays.</Question><Correct>pork/grandparents</Correct><Wrong1>pork/cook</Wrong1><Wrong2>grandparents/cook</Wrong2></Item>
+<Item><Question>My cousin is looking for guitar picks.</Question><Correct>picks/cousin</Correct><Wrong1>guitar/looking</Wrong1><Wrong2>pick/for</Wrong2></Item>
+<Item><Question>My grandmother gave me a wooden comb.</Question><Correct>grandmother/comb</Correct><Wrong1>grandmother/wooden</Wrong1><Wrong2>comb/gave</Wrong2></Item>
+<Item><Question>Where did you learn how to harvest squash?</Question><Correct>squash</Correct><Wrong1>harvest</Wrong1><Wrong2>learn</Wrong2></Item>
+<Item><Question>Hugo asks for a glass of water.</Question><Correct>glass/water</Correct><Wrong1>water/asks</Wrong1><Wrong2>Hugo/asks</Wrong2></Item>
+<Item><Question>How did you get the guavas from your friend?</Question><Correct>guavas/friend</Correct><Wrong1>guavas/get</Wrong1><Wrong2>friend/from</Wrong2></Item>
+<Item><Question>My sister and I went for a walk for a while.</Question><Correct>sister/walk</Correct><Wrong1>sister/went</Wrong1><Wrong2>walk/went</Wrong2></Item>
+<Item><Question>Carmen picks oranges from the farm.</Question><Correct>oranges/farm</Correct><Wrong1>oranges/picks</Wrong1><Wrong2>farm/picks</Wrong2></Item>
+</Activity>
+
+

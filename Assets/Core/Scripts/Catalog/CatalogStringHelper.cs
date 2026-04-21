@@ -4,7 +4,7 @@ namespace EnglishTek.Core
 {
     internal static class CatalogStringHelper
     {
-        internal static string NormalizeCategory(string value)
+        private static string Normalize(string value)
         {
             if (string.IsNullOrWhiteSpace(value))
             {
@@ -14,24 +14,18 @@ namespace EnglishTek.Core
             return value.Trim().ToLowerInvariant();
         }
 
-        internal static string NormalizeUnit(string value)
-        {
-            if (string.IsNullOrWhiteSpace(value))
-            {
-                return string.Empty;
-            }
+        internal static string NormalizeCategory(string value) => Normalize(value);
 
-            return value.Trim().ToLowerInvariant();
-        }
+        internal static string NormalizeUnit(string value) => Normalize(value);
 
         internal static string FormatCategoryLabel(string category)
         {
-            return TitleCase(NormalizeCategory(category));
+            return TitleCase(Normalize(category));
         }
 
         internal static string FormatUnitLabel(string unit)
         {
-            return TitleCase(NormalizeUnit(unit));
+            return TitleCase(Normalize(unit));
         }
 
         private static string TitleCase(string normalized)

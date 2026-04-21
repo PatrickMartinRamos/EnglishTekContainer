@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using UnityEngine;
 using System.Linq;
 using System.Xml;
-using EnglishTek.Core;
 
 namespace EnglishTek.Grade2.ID232
 {
@@ -46,34 +45,19 @@ namespace EnglishTek.Grade2.ID232
                
         public static void GenerateItem()
         {
-            string manifestKey = "";
-            string fallbackKey = "";
+            string instructions = string.Empty;
+            string PATH = "XML/" + GameManager.GameID + "/";
             switch (Difficulty)
             {
-                case "Practice":
-                    manifestKey = "ItemBankPractice_ET1ID232";
-                    fallbackKey = "ItemBankPractice_ETID232";
-                    break;
-                case "Workout":
-                    manifestKey = "ItembankWorkout_ET1ID232";
-                    fallbackKey = "ItemBankWorkout_ETID232";
-                    break;
-                case "Quiz":
-                    manifestKey = "ItembankQuiz_ET1ID232";
-                    fallbackKey = "ItemBankQuiz_ETID232";
-                    break;
+                case "Practice": PATH += "Itembank_Practice";  break;
+                case "Workout": PATH += "Itembank_Workout"; break;
+                case "Quiz": PATH += "Itembank_Quiz"; break;
             }
-
             string NODE = "Activity/Item";
-            string xmlContent = GetXMLTextWithFallback(manifestKey, fallbackKey);
-            if (string.IsNullOrEmpty(xmlContent))
-            {
-                Debug.LogError("Could not find XML in bundle for keys: " + manifestKey + ", " + fallbackKey);
-                return;
-            }
 
+            TextAsset textAsset = (TextAsset)Resources.Load(PATH, typeof(TextAsset));
             XmlDocument xmlDoc = new XmlDocument();
-            xmlDoc.LoadXml(xmlContent);
+            xmlDoc.LoadXml(textAsset.text);
 
             Questions = new List<string>();
             Corrects = new List<string>();
@@ -134,12 +118,8 @@ namespace EnglishTek.Grade2.ID232
 
         public static string Feedback()
         {
-            string xmlContent = GetXMLTextWithFallback("Feedback_ET1ID232", "Feedback_ETID232");
-            if (string.IsNullOrEmpty(xmlContent))
-            {
-                return "No feedback data found.\nYour score: " + Score + "/" + TotalItem;
-            }
-
+            string instructions = string.Empty;
+            string PATH = "XML/" + GameManager.GameID + "/Feedback";
             string NODE = "Feedback/";
             string feedback = string.Empty;
 
@@ -153,8 +133,9 @@ namespace EnglishTek.Grade2.ID232
             else if (percentage < 70)
                 NODE += "Fail";
 
+            TextAsset textAsset = (TextAsset)Resources.Load(PATH, typeof(TextAsset));
             XmlDocument xmlDoc = new XmlDocument();
-            xmlDoc.LoadXml(xmlContent);
+            xmlDoc.LoadXml(textAsset.text);
 
             feedback = xmlDoc.SelectSingleNode(NODE).InnerText + 
                 "\nYour score: " + Score + "/" + TotalItem;
@@ -173,42 +154,21 @@ namespace EnglishTek.Grade2.ID232
 
         static string GetInstructions()
         {
-            string xmlContent = GetXMLTextWithFallback("Instruction_ET1ID232", "Instruction_ETID232");
-            if (string.IsNullOrEmpty(xmlContent))
-            {
-                return "No Instructions Found";
-            }
-
+            string instructions = string.Empty;
+            string PATH = "XML/" + GameManager.GameID + "/Instruction";
+            string NODE = "Instruction";
+            TextAsset textAsset = (TextAsset)Resources.Load(PATH, typeof(TextAsset));
             XmlDocument xmlDoc = new XmlDocument();
-            xmlDoc.LoadXml(xmlContent);
+            xmlDoc.LoadXml(textAsset.text);
 
-            XmlNode node = xmlDoc.SelectSingleNode("Instruction");
-            return node != null ? node.InnerText : "No Instructions Found";
-        }
-
-        static string GetXMLTextWithFallback(params string[] keys)
-        {
-            if (GameSession.CurrentManifest == null || keys == null)
+            foreach (XmlNode node in xmlDoc.SelectNodes(NODE))
             {
-                return null;
-            }
-
-            for (int i = 0; i < keys.Length; i++)
-            {
-                string key = keys[i];
-                if (string.IsNullOrEmpty(key))
+                foreach (XmlNode innerNode in node.ChildNodes)
                 {
-                    continue;
-                }
-
-                string xml = GameSession.CurrentManifest.GetXMLText(key);
-                if (!string.IsNullOrEmpty(xml))
-                {
-                    return xml;
+                    instructions = innerNode.InnerText.ToString();
                 }
             }
-
-            return null;
+            return instructions;
         }
         #endregion
     }
