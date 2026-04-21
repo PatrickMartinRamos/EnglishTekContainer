@@ -1,0 +1,61 @@
+<Itembank>
+  <Level1>
+	  <Item>
+		  <Question>Saan nakita ang lihim na mensahe?</Question>
+		  <Correct>Sa pinto ng aklatan</Correct>
+		  <Choices>Sa pinto ng aklatan|Sa kantina|Sa gym</Choices>
+	  </Item>
+
+	  <Item>
+		  <Question>Saan sinabi ng librarian na makikita ang unang clue?</Question>
+		  <Correct>Sa mesa ng sangguniang babasahin</Correct>
+		  <Choices>Sa mesa ng sangguniang babasahin| Sa playground|Sa bintana</Choices>
+	  </Item>
+
+	  <Item>
+		  <Question>Alin ang ginamit para hanapin ang pahina ng “Mga Alituntunin sa Aklatan”?</Question>
+		  <Correct>Talaan ng nilalaman</Correct>
+		  <Choices>Talaan ng nilalaman|Kalendaryo|Notebook</Choices>
+	  </Item>
+
+	  <Item>
+		  <Question>Para saan ang legend sa mapa?</Question>
+		  <Correct>Para malaman ang kahulugan ng simbolo</Correct>
+		  <Choices>Para malaman ang kahulugan ng simbolo| Para pumili ng pagkain|Para gumawa ng tula</Choices>
+	  </Item>
+
+	  <Item>
+		  <Question>Ano ang natutuhan ng mga mag-aaral sa kuwento?</Question>
+		  <Correct> Gumamit ng sanggunian para makahanap ng sagot</Correct>
+		  <Choices> Gumamit ng sanggunian para makahanap ng sagot|Maglaro sa aklatan|Magdikit ng poster sa pinto</Choices>
+	  </Item>
+
+  </Level1>
+
+  <Level2>
+    <Item><Question>Question1</Question><Correct>correct</Correct><Choices>correct,wrong1,wrong2</Choices></Item>
+    <Item><Question>Question2</Question><Correct>correct</Correct><Choices>correct,wrong1,wrong2</Choices></Item>
+    <Item><Question>Question3</Question><Correct>correct</Correct><Choices>correct,wrong1,wrong2</Choices></Item>
+    <Item><Question>Question4</Question><Correct>correct</Correct><Choices>correct,wrong1,wrong2</Choices></Item>
+    <Item><Question>Question5</Question><Correct>correct</Correct><Choices>correct,wrong1,wrong2</Choices></Item>
+    <Item><Question>Question6</Question><Correct>correct</Correct><Choices>correct,wrong1,wrong2</Choices></Item>
+    <Item><Question>Question7</Question><Correct>correct</Correct><Choices>correct,wrong1,wrong2</Choices></Item>
+    <Item><Question>Question8</Question><Correct>correct</Correct><Choices>correct,wrong1,wrong2</Choices></Item>
+    <Item><Question>Question9</Question><Correct>correct</Correct><Choices>correct,wrong1,wrong2</Choices></Item>
+    <Item><Question>Question10</Question><Correct>correct</Correct><Choices>correct,wrong1,wrong2</Choices></Item>
+  </Level2>
+  
+  <Level3>
+    <Item><Question>Question1</Question><Correct>correct</Correct><Choices>correct,wrong1,wrong2</Choices></Item>
+    <Item><Question>Question2</Question><Correct>correct</Correct><Choices>correct,wrong1,wrong2</Choices></Item>
+    <Item><Question>Question3</Question><Correct>correct</Correct><Choices>correct,wrong1,wrong2</Choices></Item>
+    <Item><Question>Question4</Question><Correct>correct</Correct><Choices>correct,wrong1,wrong2</Choices></Item>
+    <Item><Question>Question5</Question><Correct>correct</Correct><Choices>correct,wrong1,wrong2</Choices></Item>
+    <Item><Question>Question6</Question><Correct>correct</Correct><Choices>correct,wrong1,wrong2</Choices></Item>
+    <Item><Question>Question7</Question><Correct>correct</Correct><Choices>correct,wrong1,wrong2</Choices></Item>
+    <Item><Question>Question8</Question><Correct>correct</Correct><Choices>correct,wrong1,wrong2</Choices></Item>
+    <Item><Question>Question9</Question><Correct>correct</Correct><Choices>correct,wrong1,wrong2</Choices></Item>
+    <Item><Question>Question10</Question><Correct>correct</Correct><Choices>correct,wrong1,wrong2</Choices></Item>
+  </Level3>
+
+</Itembank>

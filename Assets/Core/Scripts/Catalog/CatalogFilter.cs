@@ -5,6 +5,33 @@ namespace Tek.Core
 {
     internal static class CatalogFilter
     {
+        // Natural sort: compares embedded numbers numerically so "Unit 2" < "Unit 10".
+        private static int NaturalCompare(string a, string b)
+        {
+            int ia = 0, ib = 0;
+            while (ia < a.Length && ib < b.Length)
+            {
+                bool aIsDigit = char.IsDigit(a[ia]);
+                bool bIsDigit = char.IsDigit(b[ib]);
+
+                if (aIsDigit && bIsDigit)
+                {
+                    int numA = 0, numB = 0;
+                    while (ia < a.Length && char.IsDigit(a[ia])) numA = numA * 10 + (a[ia++] - '0');
+                    while (ib < b.Length && char.IsDigit(b[ib])) numB = numB * 10 + (b[ib++] - '0');
+                    int cmp = numA.CompareTo(numB);
+                    if (cmp != 0) return cmp;
+                }
+                else
+                {
+                    int cmp = char.ToUpperInvariant(a[ia]).CompareTo(char.ToUpperInvariant(b[ib]));
+                    if (cmp != 0) return cmp;
+                    ia++; ib++;
+                }
+            }
+            return a.Length.CompareTo(b.Length);
+        }
+
         // Returns the normalized label for a raw category or unit string, defaulting to "general".
         private static string EffectiveLabel(string raw)
         {
@@ -40,6 +67,7 @@ namespace Tek.Core
                 if (seen.Add(category)) categories.Add(category);
             }
 
+            categories.Sort(NaturalCompare);
             return categories;
         }
 
@@ -62,6 +90,7 @@ namespace Tek.Core
                 if (seen.Add(unit)) units.Add(unit);
             }
 
+            units.Sort(NaturalCompare);
             return units;
         }
     }

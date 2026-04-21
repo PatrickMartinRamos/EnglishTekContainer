@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Activity>
+	<Item>
+		<Question>(Steve) has a red cap.</Question>
+		<Correct>Yes</Correct>
+	</Item>
+	<Item>
+		<Question>We went to the (province) for a trip.</Question>
+		<Correct>No</Correct>
+	</Item>
+	<Item>
+		<Question>Our class meets on (Friday).</Question>
+		<Correct>Yes</Correct>
+	</Item>
+	<Item>
+		<Question>My birthday is in (March).</Question>
+		<Correct>Yes</Correct>
+	</Item>
+	<Item>
+		<Question>(Oliver) drew a picture in class.</Question>
+		<Correct>Yes</Correct>
+	</Item>
+	<Item>
+		<Question>We live in (Manila).</Question>
+		<Correct>Yes</Correct>
+	</Item>
+	<Item>
+		<Question>We celebrate (Christmas) in December.</Question>
+		<Correct>Yes</Correct>
+	</Item>
+	<Item>
+		<Question>The bus passed (Rizal) Street.</Question>
+		<Correct>Yes</Correct>
+	</Item>
+	<Item>
+		<Question>We took photos in the (park).</Question>
+		<Correct>No</Correct>
+	</Item>
+	<Item>
+		<Question>(Vanessa) helped clean the room.</Question>
+		<Correct>Yes</Correct>
+	</Item>
+</Activity>

@@ -5,4 +5,5 @@
   <assembly fullname="ID213" preserve="all"/>
   <assembly fullname="ID232" preserve="all"/>
   <assembly fullname="ID101" preserve="all"/>
+  <assembly fullname="ID102" preserve="all"/>
 </linker>
