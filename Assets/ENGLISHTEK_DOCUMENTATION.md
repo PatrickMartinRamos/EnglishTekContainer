@@ -1,7 +1,7 @@
-# EnglishTek Container — Complete Documentation
+# TekContainer — Complete Documentation
 
 > Last updated: April 21, 2026
-> Unity project. Namespace root: `EnglishTek.Core` (container), `EnglishTek.Grade1.ID###` / `EnglishTek.Grade2.ID###` (interactives).
+> Unity project. Namespace root: `Tek.Core` (container), `EnglishTek.Grade1.ID###` / `EnglishTek.Grade2.ID###` (interactives).
 
 ---
 
@@ -23,10 +23,12 @@
    - 4.10 [ArcCarousel](#410-arccarousel)
    - 4.11 [CarouselHomeBackground](#411-carouselhomebackground)
    - 4.12 [InteractiveCacheClearer (Editor)](#412-interactivecacheclearer-editor)
-   - 4.13 [XmlLoader](#413-xmlloader)
-   - 4.14 [IXmlLoadable](#414-ixmlloadable)
-   - 4.15 [AspectRatioEnforcer](#415-aspectratioenforcer)
-   - 4.16 [InteractivePacker (Container Editor)](#416-interactivepacker-container-editor)
+   - 4.13 [InteractiveCacheClearer (Editor)](#412-interactivecacheclearer-editor)
+   - 4.13b [BundleUrlHelper](#413b-bundleurlhelper)
+   - 4.14 [XmlLoader](#414-xmlloader)
+   - 4.15 [IXmlLoadable](#415-ixmlloadable)
+   - 4.16 [AspectRatioEnforcer](#416-aspectratioenforcer)
+   - 4.17 [InteractivePacker (Container Editor)](#417-interactivepacker-container-editor)
 5. [Interactive Games Reference](#5-interactive-games-reference)
    - 5.1 [ID106 — Whack-a-Mole (Grade 1, Grammar)](#51-id106--whack-a-mole-grade-1-grammar)
    - 5.2 [ID213 — A Day at the Beach (Grade 1, Grammar)](#52-id213--a-day-at-the-beach-grade-1-grammar)
@@ -44,7 +46,7 @@
 
 ## 1. Project Overview
 
-**EnglishTek Container** is a Unity multi-platform shell that:
+**TekContainer** is a Unity multi-platform shell that:
 
 - Displays of interactive games fetched from a remote HTTP server.
 - Downloads, caches, and launches individual games as **AssetBundles** at runtime.
@@ -134,7 +136,7 @@ InteractiveController  (MonoBehaviour — one per grade/scene)
 ### 4.1 `GameSession`
 
 **File:** `Assets/Core/Scripts/GameSession.cs`
-**Type:** `static class` — `EnglishTek.Core`
+**Type:** `static class` — `Tek.Core`
 
 Global state bag bridging container and running game.
 
@@ -148,7 +150,8 @@ Global state bag bridging container and running game.
 
 **Usage in gameplay scripts:**
 ```csharp
-string xml = GameSession.CurrentManifest.GetXMLText("ItemBankPractice_ET1ID106");
+string xml = GameSession.CurrentManifest.GetXMLText("Itembank_Practice");
+// Internally calls Resources.Load<TextAsset>("XML/106/Itembank_Practice")
 ```
 
 ---
@@ -156,7 +159,7 @@ string xml = GameSession.CurrentManifest.GetXMLText("ItemBankPractice_ET1ID106")
 ### 4.2 `InteractiveController`
 
 **File:** `Assets/Core/Scripts/Interactive/InteractiveController.cs`
-**Type:** `MonoBehaviour` — `EnglishTek.Core`
+**Type:** `MonoBehaviour` — `Tek.Core`
 
 Central coordinator. One instance per grade, lives in the container scene.
 
@@ -166,7 +169,7 @@ Central coordinator. One instance per grade, lives in the container scene.
 |-------|---------|-------------|
 | `serverRoot` | `http://localhost:8080/Interactive/` | Base URL for all server requests. |
 | `grade` | `grade1` | Grade prefix for catalog and bundle names. Use `grade2` for Grade 2. |
-| `bundlePrefix` | `englishtek` | Prefix for bundle file names. Change for non-EnglishTek bundles (e.g. `filipinotek`). |
+| `bundlePrefix` | _(empty)_ | Prefix for bundle file names. Set in Inspector per product (e.g. `englishtek`, `filipinotek`). |
 | `catalogFileName` | `catalog.json` | File appended to grade path to form the catalog URL. |
 | `defaultCategory` | _(empty)_ | Fallback category for default folder paths. |
 | `defaultUnit` | _(empty)_ | Fallback unit for default folder paths. |
@@ -174,7 +177,6 @@ Central coordinator. One instance per grade, lives in the container scene.
 | `overlayPrefab` | `null` | Optional back button overlay prefab. |
 | `overlayButtonCorner` | `TopLeft` | Screen corner for the back button. |
 | `overlayButtonPadding` | `(10, 10)` | Padding from the corner. |
-| `debugText` | `null` | Optional `TextMeshProUGUI` for on-screen download status. |
 
 #### Public API
 
@@ -210,7 +212,7 @@ Cache is tried first on every load. Clear via **EnglishTek → Clear Interactive
 ### 4.3 `InteractiveManifest`
 
 **File:** `Assets/Core/Scripts/Interactive/InteractiveManifest.cs`
-**Type:** `ScriptableObject` (`[CreateAssetMenu]`) — global namespace
+**Type:** `ScriptableObject` (`[CreateAssetMenu]`) — `Tek.Core`
 
 Describes a game bundle. Created in the game project and baked into the `.assets` bundle.
 
@@ -220,18 +222,18 @@ Describes a game bundle. Created in the game project and baked into the `.assets
 | `gameId` | `int` | Numeric game ID (e.g. `106`). Must match the ID in the GameManager namespace and the `Resources/XML/{id}/` folder. |
 | `firstSceneName` | `string` | Scene to load on startup. Set to `"Title"`. |
 | `allScenes` | `List<Object>` | All scenes in the bundle (build tracking). |
-| `xmlConfigs` | `List<NamedXML>` | Key → TextAsset XML pairs. **Used by the container editor import tool only — not read at runtime.** |
+| `xmlConfigs` | `List<NamedXML>` | Key → TextAsset XML pairs. **Inspector-only.** Used as a fallback source by `GetXMLText` and by the editor import tool. Not loaded from the bundle at runtime. |
 | `prefabsToInclude` | `GameObject[]` | Prefabs force-included in `.assets`. |
-| `GetXMLText(key)` | `string` | Returns XML text for key if `xmlConfigs` is populated, or `null`. At runtime the manifest is reconstructed without XML — use `Resources.Load` or `XmlLoader` instead. |
+| `GetXMLText(key)` | `string` | Loads `Resources/XML/{gameId}/{key}` first. Falls back to `xmlConfigs` if the Resources file is missing. Returns `null` if neither is found. |
 
-> **Note:** XML files are **not bundled**. They are imported to `Assets/Resources/XML/{gameId}/` in the container via the [InteractivePacker](#416-interactivepacker-container-editor) editor tool and loaded at runtime with `Resources.Load`.
+> **XML is never bundled.** Files live in `Assets/Resources/XML/{gameId}/` in the container and are loaded at runtime via `Resources.Load`. Use [InteractivePacker](#416-interactivepacker-container-editor) to import XML from the game project into the container.
 
 ---
 
 ### 4.4 `InteractiveCatalogEntry`
 
 **File:** `Assets/Core/Scripts/Interactive/InteractiveCatalogEntry.cs`
-**Type:** `[Serializable]` class — `EnglishTek.Core`
+**Type:** `[Serializable]` class — `Tek.Core`
 
 One entry in `catalog.json`.
 
@@ -251,8 +253,8 @@ Root catalog document: `{ "interactives": [ ... ] }`.
 
 ### 4.5 `InteractiveCatalogMenu`
 
-**File:** `Assets/Core/Scripts/Interactive/InteractiveCatalogMenu.cs`
-**Type:** `MonoBehaviour` — `EnglishTek.Core`
+**Files:** `Assets/Core/Scripts/Interactive/InteractiveCatalogMenu.cs` + `InteractiveCatalogMenu.Buttons.cs` (partial class)
+**Type:** `MonoBehaviour` — `Tek.Core`
 
 Renders catalog as three-level navigation: **Category → Unit → Entry**.
 
@@ -276,10 +278,6 @@ Renders catalog as three-level navigation: **Category → Unit → Entry**.
 |--------|-------------|
 | `SelectLesson(category)` | Filters by category. |
 | `SelectUnit(unit)` | Filters by unit within current category. |
-| `SelectGrammarLesson()` | Shortcut for `SelectLesson("grammar")`. |
-| `SelectReadingLesson()` | Shortcut for `SelectLesson("reading")`. |
-| `SelectListeningLesson()` | Shortcut for `SelectLesson("listening")`. |
-| `SelectVirtualDialogueLesson()` | Shortcut for `SelectLesson("virtual dialogue")`. |
 | `virtual GoBack()` | Override in subclass for back navigation. |
 
 ---
@@ -287,7 +285,7 @@ Renders catalog as three-level navigation: **Category → Unit → Entry**.
 ### 4.6 `CatalogMenuNavigator`
 
 **File:** `Assets/Core/Scripts/Interactive/CatalogMenuNavigator.cs`
-**Type:** Extends `InteractiveCatalogMenu` — `EnglishTek.Core`
+**Type:** Extends `InteractiveCatalogMenu` — `Tek.Core`
 
 Adds animated UIGroup transitions between navigation levels.
 
@@ -311,7 +309,7 @@ Adds animated UIGroup transitions between navigation levels.
 ### 4.7 `ContainerReturnOverlay`
 
 **File:** `Assets/Core/Scripts/ContainerReturnOverlay.cs`
-**Type:** `MonoBehaviour` (DontDestroyOnLoad singleton) — `EnglishTek.Core`
+**Type:** `MonoBehaviour` (DontDestroyOnLoad singleton) — `Tek.Core`
 
 Persistent back button overlay shown inside the running interactive.
 
@@ -336,7 +334,7 @@ Persistent back button overlay shown inside the running interactive.
 ### 4.8 `UIGroup`
 
 **File:** `Assets/Core/Scripts/UIGroup.cs`
-**Type:** `MonoBehaviour` — `EnglishTek.Core`
+**Type:** `MonoBehaviour` — `Tek.Core`
 
 Attach to any UI container to give it animated show/hide. Manages a `CanvasGroup` automatically.
 
@@ -383,7 +381,7 @@ Easing: `Show` = `EaseOutQuad`, `Hide` = `EaseInQuad`, `ScalePop` = `EaseOutBack
 
 ### 4.9 Catalog Helpers
 
-All `internal static`, `EnglishTek.Core`.
+All `internal static`, `Tek.Core`.
 
 **`CatalogFilter`** — `Assets/Core/Scripts/Catalog/CatalogFilter.cs`
 
@@ -392,6 +390,7 @@ All `internal static`, `EnglishTek.Core`.
 | `HasCategory(interactives, category)` | `true` if any entry matches category. |
 | `BuildUniqueCategories(interactives)` | Deduplicated list of all categories. |
 | `BuildUnitsForCategory(interactives, category)` | Deduplicated units for category. |
+| `EffectiveLabel(raw)` | Trims and lowercases a raw category or unit string (replaces old `EffectiveCategory`/`EffectiveUnit`). |
 
 **`CatalogStringHelper`** — `Assets/Core/Scripts/Catalog/CatalogStringHelper.cs`
 
@@ -428,7 +427,7 @@ Procedural UI builders for when no prefabs are assigned.
 ### 4.10 `ArcCarousel`
 
 **File:** `Assets/Core/Scripts/UI/ArcCarousel.cs`
-**Type:** `MonoBehaviour` (`[ExecuteAlways]`) — `EnglishTek.Core`
+**Type:** `MonoBehaviour` (`[ExecuteAlways]`) — `Tek.Core`
 
 Swipeable horizontal arc carousel. Items are children of this GameObject.
 
@@ -457,7 +456,7 @@ Swipeable horizontal arc carousel. Items are children of this GameObject.
 ### 4.11 `CarouselHomeBackground`
 
 **File:** `Assets/Core/Scripts/UI/CarouselHomeBackground.cs`
-**Type:** `MonoBehaviour` — `EnglishTek.Core`
+**Type:** `MonoBehaviour` — `Tek.Core`
 
 Watches an `ArcCarousel` and swaps a `RawImage` background to the centered entry's `home` image.
 
@@ -476,28 +475,50 @@ Watches an `ArcCarousel` and swaps a `RawImage` background to the centered entry
 ### 4.12 `InteractiveCacheClearer` (Editor)
 
 **File:** `Assets/Core/Editor/InteractiveCacheClearer.cs`
-**Type:** `static class` (Editor only) — `EnglishTek.Core.Editor`
+**Type:** `static class` (Editor only) — `Tek.Core.Editor`
 
-Unity toolbar menu at **EnglishTek → Clear Interactive Cache**.
+Unity toolbar menu at **TekContainer → Clear Interactive Cache**.
 
 | Menu Item | Action |
 |-----------|--------|
-| **All** | Deletes entire `InteractiveCache` folder (with confirmation). |
-| **ID106** | Clears all cached bundles for ID106. |
-| **ID213** | Clears all cached bundles for ID213. |
-| **ID232** | Clears all cached bundles for ID232. |
-| **Show Cache Folder** | Opens cache folder in Explorer. |
+| **All** | Deletes `InteractiveCache`, `CatalogCache`, and `ThumbnailCache` folders (with confirmation). |
+| **Show Cache Folder** | Opens `Application.persistentDataPath` in Explorer. |
 
-Cache root: `Application.persistentDataPath/InteractiveCache/`
+Cache folders under `Application.persistentDataPath`:
 
-> Use this whenever you push new bundles to the server to force fresh downloads.
+| Folder | Contents |
+|--------|----------|
+| `InteractiveCache/` | Downloaded `.assets` and `.scenes` bundles per game ID. |
+| `CatalogCache/` | Cached `catalog.json` per grade. |
+| `ThumbnailCache/` | Downloaded thumbnail and home background images. |
+
+> Use **All** whenever you push new bundles, catalog changes, or updated images to the server.
 
 ---
 
-### 4.13 `XmlLoader`
+### 4.13b `BundleUrlHelper`
+
+**File:** `Assets/Core/Scripts/Interactive/BundleUrlHelper.cs`
+**Type:** `internal static class` — `Tek.Core`
+
+Static URL and path helpers extracted from `InteractiveController`. Not called directly by game scripts.
+
+| Method | Description |
+|--------|-------------|
+| `NormalizePathPart(s)` | Trims and lowercases a path segment. |
+| `NormalizeLookupId(id)` | Uppercases and strips leading `ID` for numeric comparison. |
+| `NormalizeCacheKey(id)` | Lowercases a cache key string. |
+| `EncodePathSegments(s)` | URL-encodes spaces and special chars in a path segment. |
+| `BuildDefaultFolderPath(category, unit, id)` | Returns `"{category}/{unit}/{id}/"`. |
+| `BuildDefaultBundleBaseName(prefix, grade, id)` | Returns `"{prefix}.{grade}.{id}"` (all lowercase). |
+| `BuildCacheKey(prefix, grade, id)` | Returns the normalized cache-directory key. |
+
+---
+
+### 4.14 `XmlLoader`
 
 **File:** `Assets/Core/Scripts/XmlLoader.cs`
-**Type:** `static class` — `EnglishTek.Core`
+**Type:** `static class` — `Tek.Core`
 
 Centralized XML loading utility. All XML lives under `Resources/XML/{id}/{filename}`. New game managers should call these methods instead of building paths manually. Existing game managers are not required to change.
 
@@ -515,7 +536,7 @@ All methods return `XmlDocument` or `null` with a `LogError` if the file is miss
 
 **Typical usage in a new GameManager:**
 ```csharp
-using EnglishTek.Core;
+using Tek.Core;
 
 private static int _id = XmlLoader.IdFromNamespace(typeof(GameManager).Namespace); // → 213
 
@@ -528,10 +549,10 @@ public static void LoadItems(string difficulty)
 
 ---
 
-### 4.14 `IXmlLoadable`
+### 4.15 `IXmlLoadable`
 
 **File:** `Assets/Core/Scripts/IXmlLoadable.cs`
-**Namespace:** `EnglishTek.Core`
+**Namespace:** `Tek.Core`
 
 Optional interface for new game managers. Not used by any existing class — provided for future tooling.
 
@@ -546,10 +567,10 @@ public interface IXmlLoadable
 
 ---
 
-### 4.15 `AspectRatioEnforcer`
+### 4.16 `AspectRatioEnforcer`
 
 **File:** `Assets/Core/Scripts/UI/AspectRatioEnforcer.cs`
-**Type:** `MonoBehaviour` (`[RequireComponent(Camera)]`) — `EnglishTek.Core`
+**Type:** `MonoBehaviour` (`[RequireComponent(Camera)]`, `DontDestroyOnLoad`) — `Tek.Core`
 
 Attach to the main camera to letterbox/pillarbox the viewport to a fixed aspect ratio. A second camera fills the screen with black behind it.
 
@@ -558,14 +579,15 @@ Attach to the main camera to letterbox/pillarbox the viewport to a fixed aspect 
 | `targetWidth` | `800` | Target resolution width. |
 | `targetHeight` | `600` | Target resolution height. |
 
-Automatically creates a `BarCamera` child on `Awake` and recomputes the viewport rect whenever the screen size changes.
+On `Awake`: calls `DontDestroyOnLoad`, creates a `BarCamera` child, and computes the viewport rect. Subscribes to `SceneManager.sceneLoaded` to re-apply the rect to cameras in each newly loaded scene using scene-scoped discovery (`scene.GetRootGameObjects()`) — it never touches cameras from other scenes.
 
 ---
 
-### 4.16 `InteractivePacker` (Container Editor)
+### 4.17 `InteractivePacker` (Container Editor)
 
 **File:** `Assets/Core/Editor/InteractivePacker.cs`
 **Menu:** `Tools → Interactive Game Packer`
+**Namespace:** `Tek.Core`
 
 Editor window for preparing a game's AssetBundle and syncing XML/namespaces.
 
@@ -770,18 +792,11 @@ ServerData/Interactive/
 │   └── Virtual Dialogue/
 └── Grade 2/
     ├── catalog.json
-    ├── grammar/
-    │   └── unit1/
-    │       └── ID232/
-    │           ├── englishtek.grade2.id232.assets
-    │           ├── englishtek.grade2.id232.scenes
-    │           ├── thumb.png
-    │           └── home.png
-    └── filipinotek/
+    └── grammar/
         └── unit1/
-            └── ID101/
-                ├── filipinotek.grade2.id101.assets
-                ├── filipinotek.grade2.id101.scenes
+            └── ID232/
+                ├── englishtek.grade2.id232.assets
+                ├── englishtek.grade2.id232.scenes
                 ├── thumb.png
                 └── home.png
 ```
@@ -839,7 +854,9 @@ Examples:
     GameSession.CurrentSceneBundle = loadedScenes
     GameSession.ContainerSceneName = "ContainerScene"
 10. Reconstruct manifest from scene bundle → find first scene name ("Title")
-    GameSession.CurrentManifest = new InteractiveManifest { firstSceneName }
+    Parse gameId from catalog entry (e.g. "ID106" → 106)
+    GameSession.CurrentManifest = new InteractiveManifest { firstSceneName, gameId }
+    XML is NOT loaded from the bundle — it is always read from Resources at runtime
 11. ContainerReturnOverlay.EnsureExists() → DontDestroyOnLoad
 12. SceneManager.LoadScene("Title")
 13. Game runs:
@@ -932,7 +949,7 @@ StartCoroutine(submitScore.PostScores(diff, score));
 | "Associated script cannot be loaded" in Inspector | Bundle built from old Assembly-CSharp; container uses ID### asmdef | Clear cache for that ID, rebuild bundle from the same project that was used to create the asmdef |
 | Play button works but scene does not change | OnClick not wired in bundled scene | Title.Awake() auto-wires if no persistent listeners exist |
 | XML returns null at runtime | Wrong path or file not imported to Resources | Verify `Assets/Resources/XML/{id}/{filename}.xml` exists; re-run **Import XML to Container** |
-| Stale bundle loaded after update | Local cache still has old file | **EnglishTek → Clear Interactive Cache → [ID]** or bump `bundleVersion` in catalog |
+| Stale bundle loaded after update | Local cache still has old file | **TekContainer → Clear Interactive Cache → [ID]** or bump `bundleVersion` in catalog |
 | Script attached but Play does nothing | Null reference throws before `LoadScene` | Check Console for NullReferenceException; ensure all Inspector refs are assigned |
 | Android build crashes on interactive load | IL2CPP stripped interactive assemblies | Ensure `link.xml` preserves all ID### assemblies |
 | Bundle loads but scenes are empty | Bundle built for wrong platform (e.g. WebGL bundle on Android) | Rebuild bundle for target platform, clear cache |
@@ -946,7 +963,7 @@ StartCoroutine(submitScore.PostScores(diff, score));
 
 1. Create folder `Assets/Core/InteractiveScripts/ID###_Scripts/`.
 2. Create `ID###.asmdef`.
-3. Use namespace `EnglishTek.Grade1.ID###`.
+3. Use namespace matching your product line (e.g. `EnglishTek.Grade1.ID###` or `FilipinoTek.Grade2.ID###`).
 4. Add `<assembly fullname="ID###" preserve="all"/>` to `Assets/link.xml`.
 
 ### Step 2: Create the Five Game Scripts
@@ -957,7 +974,7 @@ Copy from ID106 or ID213 as a baseline and update all namespaces.
 
 **GameManager pattern — use `Resources.Load` or `XmlLoader`:**
 ```csharp
-using EnglishTek.Core;
+using Tek.Core;
 using System.Xml;
 using UnityEngine;
 
@@ -1068,7 +1085,7 @@ Add to `ServerData/Interactive/Grade 1/catalog.json`:
 
 Add a menu item to `Assets/Core/Editor/InteractiveCacheClearer.cs`:
 ```csharp
-[MenuItem("EnglishTek/Clear Interactive Cache/ID###")]
+[MenuItem("TekContainer/Clear Interactive Cache/ID###")]
 private static void ClearID###() => ClearById("ID###");
 ```
 
@@ -1096,5 +1113,5 @@ Run the container and check:
 | Manifest firstSceneName matches? | Should be exactly `"Title"` |
 | XML keys match code? | Compare `GetXMLText("key")` calls to manifest NamedXML keys |
 | Script assembly correct? | ID### asmdef must match what was used when building the bundle |
-| Stale cache? | Clear via EnglishTek menu or bump `bundleVersion` |
+| Stale cache? | Clear via **TekContainer → Clear Interactive Cache** or bump `bundleVersion` |
 | link.xml updated? | `<assembly fullname="ID###" preserve="all"/>` |

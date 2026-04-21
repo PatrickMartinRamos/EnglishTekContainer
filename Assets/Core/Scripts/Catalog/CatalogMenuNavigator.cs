@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace EnglishTek.Core
+namespace Tek.Core
 {
     /// <summary>
     /// Extends InteractiveCatalogMenu with animated UIGroup transitions.

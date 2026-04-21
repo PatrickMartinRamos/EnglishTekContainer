@@ -1,6 +1,6 @@
-﻿using UnityEngine;
+using UnityEngine;
 
-namespace EnglishTek.Core
+namespace Tek.Core
 {
     public static class GameSession
     {

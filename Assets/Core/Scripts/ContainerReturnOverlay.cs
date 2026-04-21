@@ -2,7 +2,7 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
-namespace EnglishTek.Core
+namespace Tek.Core
 {
     public enum OverlayButtonCorner
     {

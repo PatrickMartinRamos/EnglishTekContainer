@@ -3,7 +3,7 @@ using UnityEditor;
 using System.IO;
 using System.Text;
 using System.Text.RegularExpressions;
-using EnglishTek.Core;
+using Tek.Core;
 
 public class InteractivePacker : EditorWindow
 {

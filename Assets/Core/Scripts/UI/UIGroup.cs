@@ -2,7 +2,7 @@ using System;
 using System.Collections;
 using UnityEngine;
 
-namespace EnglishTek.Core
+namespace Tek.Core
 {
     public enum UIGroupAnimation
     {
@@ -52,6 +52,9 @@ namespace EnglishTek.Core
 
         public bool IsVisible { get; private set; }
 
+        /// <summary>Fired every time this group finishes showing (animation complete or instant snap).</summary>
+        public event Action OnShown;
+
         // ------------------------------------------------------------------ lifecycle
 
         private void Awake()
@@ -96,6 +99,7 @@ namespace EnglishTek.Core
             {
                 SnapShown();
                 onComplete?.Invoke();
+                OnShown?.Invoke();
                 return;
             }
 
@@ -147,6 +151,7 @@ namespace EnglishTek.Core
             gameObject.SetActive(true);
             IsVisible = true;
             SnapShown();
+            OnShown?.Invoke();
         }
 
         /// <summary>Snap hidden with no animation.</summary>
@@ -182,6 +187,7 @@ namespace EnglishTek.Core
             SnapShown();
             activeCoroutine = null;
             onComplete?.Invoke();
+            OnShown?.Invoke();
         }
 
         private IEnumerator RunHide(Action onComplete)

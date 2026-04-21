@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace EnglishTek.Core
+namespace Tek.Core
 {
     [System.Serializable]
     public class InteractiveCatalogEntry

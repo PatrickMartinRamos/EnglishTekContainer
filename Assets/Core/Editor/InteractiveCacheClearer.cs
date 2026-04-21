@@ -2,86 +2,60 @@ using System.IO;
 using UnityEditor;
 using UnityEngine;
 
-namespace EnglishTek.Core.Editor
+namespace Tek.Core.Editor
 {
     public static class InteractiveCacheClearer
     {
-        private static string CacheRoot =>
+        private static string InteractiveCacheRoot =>
             Path.Combine(Application.persistentDataPath, "InteractiveCache");
 
-        [MenuItem("EnglishTek/Clear Interactive Cache/All")]
+        private static string CatalogCacheRoot =>
+            Path.Combine(Application.persistentDataPath, "CatalogCache");
+
+        private static string ThumbnailCacheRoot =>
+            Path.Combine(Application.persistentDataPath, "ThumbnailCache");
+
+        [MenuItem("TekContainer/Clear Interactive Cache/All")]
         private static void ClearAll()
         {
-            if (!Directory.Exists(CacheRoot))
-            {
-                EditorUtility.DisplayDialog("Clear Cache", "Cache folder does not exist:\n" + CacheRoot, "OK");
-                return;
-            }
-
             bool confirm = EditorUtility.DisplayDialog(
-                "Clear All Interactive Cache",
-                "This will delete all cached bundles at:\n" + CacheRoot + "\n\nProceed?",
+                "Clear All Cache",
+                "This will delete all cached bundles, catalogs, and images at:\n" +
+                Application.persistentDataPath + "\n\nProceed?",
                 "Clear", "Cancel");
 
             if (!confirm) return;
 
-            Directory.Delete(CacheRoot, true);
-            Debug.Log("[EnglishTek] Interactive cache cleared: " + CacheRoot);
-            EditorUtility.DisplayDialog("Clear Cache", "All interactive cache cleared.", "OK");
+            int cleared = 0;
+            cleared += DeleteFolder(InteractiveCacheRoot);
+            cleared += DeleteFolder(CatalogCacheRoot);
+            cleared += DeleteFolder(ThumbnailCacheRoot);
+
+            string msg = cleared > 0
+                ? $"Cleared {cleared} cache folder(s)."
+                : "No cache folders found.";
+
+            Debug.Log("[TekContainer] " + msg);
+            EditorUtility.DisplayDialog("Clear Cache", msg, "OK");
         }
 
-        [MenuItem("EnglishTek/Clear Interactive Cache/ID106")]
-        private static void ClearID106() => ClearById("ID106");
-
-        [MenuItem("EnglishTek/Clear Interactive Cache/ID213")]
-        private static void ClearID213() => ClearById("ID213");
-
-        [MenuItem("EnglishTek/Clear Interactive Cache/ID232")]
-        private static void ClearID232() => ClearById("ID232");
-
-        [MenuItem("EnglishTek/Clear Interactive Cache/Show Cache Folder")]
+        [MenuItem("TekContainer/Clear Interactive Cache/Show Cache Folder")]
         private static void ShowCacheFolder()
         {
-            if (!Directory.Exists(CacheRoot))
-                Directory.CreateDirectory(CacheRoot);
+            // Reveal persistentDataPath — all cache folders live here
+            string root = Application.persistentDataPath;
+            if (!Directory.Exists(root))
+                Directory.CreateDirectory(root);
 
-            EditorUtility.RevealInFinder(CacheRoot);
+            EditorUtility.RevealInFinder(root);
         }
 
-        private static void ClearById(string gameId)
+        private static int DeleteFolder(string path)
         {
-            // Cache keys are built as {normalizedId}_{normalizedBundleBase}[_{version}]
-            // so we match any subfolder starting with the normalized id.
-            string normalizedId = gameId.Trim().Replace("/", "_").Replace("\\", "_").Replace(" ", "_").ToLower();
-
-            if (!Directory.Exists(CacheRoot))
-            {
-                EditorUtility.DisplayDialog("Clear Cache", "Cache folder does not exist:\n" + CacheRoot, "OK");
-                return;
-            }
-
-            string[] subdirs = Directory.GetDirectories(CacheRoot);
-            int deleted = 0;
-            foreach (string dir in subdirs)
-            {
-                string dirName = Path.GetFileName(dir).ToLower();
-                if (dirName.StartsWith(normalizedId))
-                {
-                    Directory.Delete(dir, true);
-                    Debug.Log("[EnglishTek] Deleted cache: " + dir);
-                    deleted++;
-                }
-            }
-
-            if (deleted == 0)
-            {
-                EditorUtility.DisplayDialog("Clear Cache", "No cached bundles found for " + gameId, "OK");
-            }
-            else
-            {
-                Debug.Log("[EnglishTek] Cleared " + deleted + " cache folder(s) for " + gameId);
-                EditorUtility.DisplayDialog("Clear Cache", "Cleared cache for " + gameId + " (" + deleted + " folder(s) removed).", "OK");
-            }
+            if (!Directory.Exists(path)) return 0;
+            Directory.Delete(path, true);
+            Debug.Log("[TekContainer] Deleted: " + path);
+            return 1;
         }
     }
 }

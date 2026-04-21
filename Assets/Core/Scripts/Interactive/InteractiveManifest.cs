@@ -1,7 +1,7 @@
-﻿using UnityEngine;
+using UnityEngine;
 using System.Collections.Generic;
 
-namespace EnglishTek.Core
+namespace Tek.Core
 {
     [System.Serializable]
     public class NamedXML
@@ -24,6 +24,14 @@ namespace EnglishTek.Core
 
         public string GetXMLText(string key)
         {
+            // Primary: load from Resources/XML/{gameId}/{key}
+            if (gameId > 0)
+            {
+                TextAsset localAsset = Resources.Load<TextAsset>("XML/" + gameId + "/" + key);
+                if (localAsset != null) return localAsset.text;
+            }
+
+            // Fallback: manually assigned xmlConfigs (Inspector override)
             if (xmlConfigs == null) return null;
             NamedXML config = xmlConfigs.Find(x => x.key == key);
             return (config != null && config.xmlFile != null) ? config.xmlFile.text : null;

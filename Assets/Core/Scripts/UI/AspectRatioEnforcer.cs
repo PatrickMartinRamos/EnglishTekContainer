@@ -1,6 +1,7 @@
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
-namespace EnglishTek.Core
+namespace Tek.Core
 {
 [RequireComponent(typeof(Camera))]
 public class AspectRatioEnforcer : MonoBehaviour
@@ -11,11 +12,23 @@ public class AspectRatioEnforcer : MonoBehaviour
     private Camera targetCamera;
     private int lastScreenWidth;
     private int lastScreenHeight;
+    private Rect currentRect;
 
     private void Awake()
     {
+        DontDestroyOnLoad(gameObject);
         targetCamera = GetComponent<Camera>();
         CreateBarCamera();
+    }
+
+    private void OnEnable()
+    {
+        SceneManager.sceneLoaded += OnSceneLoaded;
+    }
+
+    private void OnDisable()
+    {
+        SceneManager.sceneLoaded -= OnSceneLoaded;
     }
 
     private void Start()
@@ -28,6 +41,22 @@ public class AspectRatioEnforcer : MonoBehaviour
         if (Screen.width != lastScreenWidth || Screen.height != lastScreenHeight)
         {
             ApplyAspect();
+        }
+    }
+
+    private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
+    {
+        // Apply the current letterbox rect to every camera in the newly loaded scene only.
+        // We intentionally skip our own cameras (targetCamera, bar camera) which are in
+        // DontDestroyOnLoad and are not part of the loaded scene.
+        GameObject[] roots = scene.GetRootGameObjects();
+        for (int i = 0; i < roots.Length; i++)
+        {
+            Camera[] cameras = roots[i].GetComponentsInChildren<Camera>(true);
+            for (int j = 0; j < cameras.Length; j++)
+            {
+                cameras[j].rect = currentRect;
+            }
         }
     }
 
@@ -46,39 +75,26 @@ public class AspectRatioEnforcer : MonoBehaviour
 
     private void ApplyAspect()
     {
-        if (targetCamera == null)
-        {
-            return;
-        }
+        if (targetCamera == null) return;
 
         lastScreenWidth = Screen.width;
         lastScreenHeight = Screen.height;
 
-        float safeWidth = Mathf.Max(1f, targetWidth);
-        float safeHeight = Mathf.Max(1f, targetHeight);
-        float targetAspect = safeWidth / safeHeight;
+        float targetAspect = Mathf.Max(1f, targetWidth) / Mathf.Max(1f, targetHeight);
         float windowAspect = (float)Screen.width / Screen.height;
         float scale = windowAspect / targetAspect;
 
-        Rect rect = new Rect();
-
         if (scale < 1.0f)
         {
-            rect.width = 1.0f;
-            rect.height = scale;
-            rect.x = 0f;
-            rect.y = (1.0f - scale) / 2.0f;
+            currentRect = new Rect(0f, (1f - scale) / 2f, 1f, scale);
         }
         else
         {
-            float scaleWidth = 1.0f / scale;
-            rect.width = scaleWidth;
-            rect.height = 1.0f;
-            rect.x = (1.0f - scaleWidth) / 2.0f;
-            rect.y = 0f;
+            float scaleWidth = 1f / scale;
+            currentRect = new Rect((1f - scaleWidth) / 2f, 0f, scaleWidth, 1f);
         }
 
-        targetCamera.rect = rect;
+        targetCamera.rect = currentRect;
     }
 }
 }

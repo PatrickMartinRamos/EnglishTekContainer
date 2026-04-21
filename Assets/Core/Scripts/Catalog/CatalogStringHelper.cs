@@ -1,6 +1,6 @@
 using System;
 
-namespace EnglishTek.Core
+namespace Tek.Core
 {
     internal static class CatalogStringHelper
     {

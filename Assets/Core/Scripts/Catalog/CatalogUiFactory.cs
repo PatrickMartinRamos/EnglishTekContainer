@@ -1,7 +1,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace EnglishTek.Core
+namespace Tek.Core
 {
     internal static class CatalogUiFactory
     {

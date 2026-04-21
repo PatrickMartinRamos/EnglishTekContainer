@@ -4,7 +4,7 @@ using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
-namespace EnglishTek.Core
+namespace Tek.Core
 {
     /// <summary>
     /// Revolver-style arc carousel. Items are arranged in a fixed arc;
