@@ -31,17 +31,51 @@ Unity container application that downloads an interactive catalog, loads remote 
   - Catalog JSON data model (`interactives[]` entries).
 - `Assets/Core/Scripts/Interactive/InteractiveCatalogMenu.cs`
   - Builds catalog UI and binds buttons to `RequestGameLoad`.
+- `Assets/Core/Scripts/Interactive/InteractiveCatalogMenu.Buttons.cs`
+  - Partial class handling dynamic button creation for the catalog menu.
+- `Assets/Core/Scripts/Interactive/BundleUrlHelper.cs`
+  - Utility for composing AssetBundle download URLs from catalog entry fields.
+- `Assets/Core/Scripts/Interactive/InteractiveManifest.cs`
+  - Manifest model used for XML lookups and startup scene metadata.
 - `Assets/Core/Scripts/Catalog/CatalogMenuNavigator.cs`
   - Optional animated category -> unit -> interactive navigation.
+- `Assets/Core/Scripts/Catalog/CatalogFilter.cs`
+  - Filters catalog entries by category, unit, or enabled state.
+- `Assets/Core/Scripts/Catalog/CatalogStringHelper.cs`
+  - String formatting helpers used by the catalog UI.
+- `Assets/Core/Scripts/Catalog/CatalogThumbnailLoader.cs`
+  - Loads and assigns thumbnail images for catalog buttons.
+- `Assets/Core/Scripts/Catalog/CatalogUiFactory.cs`
+  - Instantiates and configures catalog UI elements at runtime.
 - `Assets/Core/Scripts/GameSession.cs`
   - Holds currently loaded bundles and container return scene name.
 - `Assets/Core/Scripts/ContainerReturnOverlay.cs`
   - Runtime return button and scene return behavior.
-- `Assets/Core/Scripts/Interactive/InteractiveManifest.cs`
-  - Manifest model used for XML lookups and startup scene metadata.
-- `Assets/Core/InteractiveScripts/ID106_Scripts/ID106.asmdef`
-- `Assets/Core/InteractiveScripts/ID213_Scripts/ID213.asmdef`
-  - Per-interactive assemblies currently in this repository.
+- `Assets/Core/Scripts/UI/ArcCarousel.cs`
+  - Arc-based carousel layout for interactive selection UI.
+- `Assets/Core/Scripts/UI/CarouselHomeBackground.cs`
+  - Swaps background image based on selected carousel item (uses catalog `home` field).
+- `Assets/Core/Scripts/UI/CatalogStatusOverlay.cs`
+  - Overlay showing download/load status for the selected interactive.
+- `Assets/Core/Scripts/UI/AspectRatioEnforcer.cs`
+  - Enforces a fixed aspect ratio on UI elements.
+- `Assets/Core/Scripts/UI/UIGroup.cs`
+  - Helper for showing/hiding groups of UI elements together.
+
+### Per-Interactive Assemblies
+
+The following interactive assemblies are present in this repository:
+
+| ID | Script Folder | Assembly | Notes |
+|----|--------------|----------|-------|
+| ID101 | `Assets/Core/InteractiveScripts/ID101_Scripts/` | `ID101.asmdef` | |
+| ID102 | `Assets/Core/InteractiveScripts/ID102_Scripts/` | `ID102.asmdef` | |
+| ID106 | `Assets/Core/InteractiveScripts/ID106_Scripts/` | `ID106.asmdef` | Whack-a-Mole |
+| ID213 | `Assets/Core/InteractiveScripts/ID213_Scripts/` | `ID213.asmdef` | |
+| ID232 | `Assets/Core/InteractiveScripts/ID232_Scripts/` | `ID232.asmdef` | |
+| ID313 | `Assets/Core/InteractiveScripts/ID313_Scripts/` | `ID313.asmdef` | **Missing from `link.xml`** — add before release |
+| ID107 | _(no scripts yet)_ | `ID107.csproj` | Planned |
+| ID324 | _(no scripts yet)_ | `ID324.csproj` | Planned |
 
 ## Catalog JSON Contract
 
@@ -129,15 +163,19 @@ If you publish new bundles and do not change `bundleVersion`, old local cache ma
 
 5. If adding a new assembly, update stripping preservation
 - Create or update `Assets/link.xml` and preserve interactive assemblies used only by bundle-loaded scenes.
-- Example:
+- Current `Assets/link.xml` (add your new ID here):
 
 ```xml
 <linker>
   <assembly fullname="Core" preserve="all"/>
   <assembly fullname="Assembly-CSharp" preserve="all"/>
+  <assembly fullname="ID101" preserve="all"/>
+  <assembly fullname="ID102" preserve="all"/>
   <assembly fullname="ID106" preserve="all"/>
   <assembly fullname="ID213" preserve="all"/>
-  <assembly fullname="ID324" preserve="all"/>
+  <assembly fullname="ID232" preserve="all"/>
+  <assembly fullname="ID313" preserve="all"/><!-- add ID313 — currently missing -->
+  <!-- add new interactive IDs here -->
 </linker>
 ```
 
