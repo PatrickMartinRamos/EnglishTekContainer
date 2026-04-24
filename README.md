@@ -1,7 +1,6 @@
 # EnglishTekContainer
 
-Unity container application that downloads an interactive catalog, loads remote AssetBundles, and launches interactive scenes (for example ID106 and ID213).
-
+Unity container application that downloads an interactive catalog, loads remote AssetBundles, and launches interactive
 ## What This Project Does
 
 - Downloads catalog JSON from server.
@@ -70,12 +69,10 @@ The following interactive assemblies are present in this repository:
 |----|--------------|----------|-------|
 | ID101 | `Assets/Core/InteractiveScripts/ID101_Scripts/` | `ID101.asmdef` | |
 | ID102 | `Assets/Core/InteractiveScripts/ID102_Scripts/` | `ID102.asmdef` | |
-| ID106 | `Assets/Core/InteractiveScripts/ID106_Scripts/` | `ID106.asmdef` | Whack-a-Mole |
+| ID106 | `Assets/Core/InteractiveScripts/ID106_Scripts/` | `ID106.asmdef` | |
 | ID213 | `Assets/Core/InteractiveScripts/ID213_Scripts/` | `ID213.asmdef` | |
 | ID232 | `Assets/Core/InteractiveScripts/ID232_Scripts/` | `ID232.asmdef` | |
-| ID313 | `Assets/Core/InteractiveScripts/ID313_Scripts/` | `ID313.asmdef` | **Missing from `link.xml`** — add before release |
-| ID107 | _(no scripts yet)_ | `ID107.csproj` | Planned |
-| ID324 | _(no scripts yet)_ | `ID324.csproj` | Planned |
+| ID313 | `Assets/Core/InteractiveScripts/ID313_Scripts/` | `ID313.asmdef` | |
 
 ## Catalog JSON Contract
 
@@ -89,9 +86,10 @@ Top-level schema:
 {
   "interactives": [
     {
-      "id": "ID106",
-      "title": "Whack-a-Mole",
-      "category": "grammar",
+      "id": "ID101",
+      "title": "Mga Babala",
+      "grade": "Grade 2",
+      "category": "pagbasa",
       "unit": "unit1",
       "image": "thumb.png",
       "home": "home.png",
@@ -104,16 +102,13 @@ Top-level schema:
 ### Field Notes
 
 - `id`: Required for loading and button wiring.
-- `enabled`: Required for visibility in menu.
 - `title`: Optional label override (falls back to `id`).
-- `image`: Optional thumbnail filename/path.
-- `home`: Optional background image used by `CarouselHomeBackground`.
+- `grade` : So we can list all the interactive on selected grade level.
 - `category`: Optional, defaults to `general` when empty.
 - `unit`: Optional, defaults to `general` when empty.
-- `bundleBaseName`: Optional but strongly recommended. Exact bundle base name used to compose:
-  - `<bundleBaseName>.assets`
-  - `<bundleBaseName>.scenes`
-- `bundleVersion`: Optional but strongly recommended. Used by cache key to invalidate stale device cache.
+- `image`: Optional thumbnail filename/path.
+- `home`: Optional background image used by `CarouselHomeBackground`.
+- `enabled`: Required for visibility in menu.
 
 ## Bundle Naming And Paths
 
@@ -133,10 +128,6 @@ Bundles are cached under:
 Cache key includes:
 
 - interactive id
-- bundle base name
-- bundle version (if provided)
-
-If you publish new bundles and do not change `bundleVersion`, old local cache may continue to load.
 
 ## Add A New Interactive (Detailed Checklist)
 
@@ -158,8 +149,6 @@ If you publish new bundles and do not change `bundleVersion`, old local cache ma
 
 4. Update `catalog.json`
 - Add a new entry to `interactives`.
-- Set `enabled: true`.
-- Set `folder`, `bundleBaseName`, and bump `bundleVersion`.
 
 5. If adding a new assembly, update stripping preservation
 - Create or update `Assets/link.xml` and preserve interactive assemblies used only by bundle-loaded scenes.
@@ -174,7 +163,7 @@ If you publish new bundles and do not change `bundleVersion`, old local cache ma
   <assembly fullname="ID106" preserve="all"/>
   <assembly fullname="ID213" preserve="all"/>
   <assembly fullname="ID232" preserve="all"/>
-  <assembly fullname="ID313" preserve="all"/><!-- add ID313 — currently missing -->
+  <assembly fullname="ID313" preserve="all"/>
   <!-- add new interactive IDs here -->
 </linker>
 ```
@@ -237,6 +226,47 @@ Resolution order:
 3. Rebuild Android player.
 4. Rebuild Android bundles and upload.
 
+## Android APK Build Error: Unwrapped JavaScript Code
+
+Symptom:
+
+- Build fails with error: `JavaScript code is not wrapped properly` or similar IL2CPP compilation error.
+- Error references JavaScript code or `__Internal` calls outside WebGL context.
+
+Cause:
+
+- WebGL-specific JavaScript interop code (using `DllImport("__Internal")` or inline JavaScript) is not wrapped in `#if UNITY_WEBGL` preprocessor directives.
+- IL2CPP compiler for Android cannot process WebGL-specific code.
+
+Resolution:
+
+1. Locate the offending script file (check build error for file path and line number).
+2. Wrap all WebGL-specific code in preprocessor directives:
+
+```csharp
+#if UNITY_WEBGL
+    [DllImport("__Internal")]
+    private static extern void MyJavaScriptFunction();
+#endif
+```
+
+3. If the code is called from non-WebGL contexts, provide an Android fallback:
+
+```csharp
+#if UNITY_WEBGL
+    MyJavaScriptFunction();
+#elif UNITY_ANDROID
+    // Android implementation or no-op
+#endif
+```
+
+4. Rebuild the APK after changes.
+
+Common files to check:
+
+- Any script in `Assets/Core/Scripts/` or interactive scripts that uses browser APIs.
+- Third-party plugins that target multiple platforms.
+
 ## Editor Setup Notes
 
 - `InteractiveController.serverRoot` should point to reachable server endpoint.
@@ -251,6 +281,3 @@ Resolution order:
 - Loader currently relies on scene-bundle fallback for first scene, rather than strict manifest deserialization from asset bundle.
 - Startup scene preference is `Title` if present; otherwise first scene path in bundle.
 - If `catalog.json` is malformed or empty, menu remains unavailable and logs warnings.
-
-## Recommended Operational Workflow
-
