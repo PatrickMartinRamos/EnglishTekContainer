@@ -141,7 +141,7 @@ namespace Tek.Core
                 yield break;
             }
 
-            Debug.Log($"[ImageDownload] Downloading: {url}");
+            //Debug.Log($"[ImageDownload] Downloading: {url}");
 
             UnityWebRequest req = UnityWebRequestTexture.GetTexture(url);
             req.timeout = DownloadTimeoutSeconds;

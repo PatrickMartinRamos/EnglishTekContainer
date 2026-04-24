@@ -3016,7 +3016,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   serverRoot: https://et-server-data.vercel.app/Interactive/
   grade: Grade 1
-  catalogFileName: catalog.json
   defaultCategory: 
   defaultUnit: 
   bundlePrefix: englishtek
