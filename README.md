@@ -76,10 +76,7 @@ Top-level schema:
 - `home`: Optional background image used by `CarouselHomeBackground`.
 - `category`: Optional, defaults to `general` when empty.
 - `unit`: Optional, defaults to `general` when empty.
-- `bundleBaseName`: Optional but strongly recommended. Exact bundle base name used to compose:
-  - `<bundleBaseName>.assets`
-  - `<bundleBaseName>.scenes`
-- `bundleVersion`: Optional but strongly recommended. Used by cache key to invalidate stale device cache.
+
 
 ## Bundle Naming And Paths
 
