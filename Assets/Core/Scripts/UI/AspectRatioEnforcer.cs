@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using UnityEngine.UI;
 
 namespace Tek.Core
 {
@@ -8,11 +9,32 @@ public class AspectRatioEnforcer : MonoBehaviour
 {
     [SerializeField] private float targetWidth = 800f;
     [SerializeField] private float targetHeight = 600f;
+    [SerializeField] private Sprite barSprite;
 
     private Camera targetCamera;
+    private Camera barCamera;
+    private Image barImage;
     private int lastScreenWidth;
     private int lastScreenHeight;
     private Rect currentRect;
+    private bool enforcing;
+
+    /// <summary>Call this when entering an interactive to activate letterboxing.</summary>
+    public void EnableEnforcement()
+    {
+        enforcing = true;
+        ApplyAspect();
+    }
+
+    /// <summary>Call this when leaving an interactive to restore full-screen cameras.</summary>
+    public void DisableEnforcement()
+    {
+        enforcing = false;
+        currentRect = new Rect(0f, 0f, 1f, 1f);
+        if (targetCamera != null) targetCamera.rect = currentRect;
+        if (barCamera != null) barCamera.gameObject.SetActive(false);
+        ApplyToSceneCameras();
+    }
 
     private void Awake()
     {
@@ -33,11 +55,12 @@ public class AspectRatioEnforcer : MonoBehaviour
 
     private void Start()
     {
-        ApplyAspect();
+        // Do not apply on startup; call EnableEnforcement() when entering an interactive.
     }
 
     private void Update()
     {
+        if (!enforcing) return;
         if (Screen.width != lastScreenWidth || Screen.height != lastScreenHeight)
         {
             ApplyAspect();
@@ -46,9 +69,22 @@ public class AspectRatioEnforcer : MonoBehaviour
 
     private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
     {
-        // Apply the current letterbox rect to every camera in the newly loaded scene only.
-        // We intentionally skip our own cameras (targetCamera, bar camera) which are in
-        // DontDestroyOnLoad and are not part of the loaded scene.
+        // Apply the current rect to every camera in the newly loaded scene.
+        // Skip our own DontDestroyOnLoad cameras (targetCamera, barCamera).
+        ApplyToSceneCameras(scene);
+    }
+
+    private void ApplyToSceneCameras()
+    {
+        for (int s = 0; s < SceneManager.sceneCount; s++)
+        {
+            ApplyToSceneCameras(SceneManager.GetSceneAt(s));
+        }
+    }
+
+    private void ApplyToSceneCameras(Scene scene)
+    {
+        if (!scene.isLoaded) return;
         GameObject[] roots = scene.GetRootGameObjects();
         for (int i = 0; i < roots.Length; i++)
         {
@@ -62,15 +98,44 @@ public class AspectRatioEnforcer : MonoBehaviour
 
     private void CreateBarCamera()
     {
+        // Bar camera renders only the bar layer, behind everything else
+        int barLayer = 31;
+
         GameObject barGO = new GameObject("BarCamera");
         barGO.transform.SetParent(transform);
-        Camera barCamera = barGO.AddComponent<Camera>();
+        barCamera = barGO.AddComponent<Camera>();
         barCamera.clearFlags = CameraClearFlags.SolidColor;
         barCamera.backgroundColor = Color.black;
-        barCamera.cullingMask = 0;
+        barCamera.cullingMask = 1 << barLayer;
         barCamera.depth = targetCamera.depth - 1;
         barCamera.rect = new Rect(0f, 0f, 1f, 1f);
         barCamera.orthographic = true;
+
+        // Canvas rendered by the bar camera
+        GameObject canvasGO = new GameObject("BarCanvas");
+        canvasGO.transform.SetParent(barGO.transform);
+        canvasGO.layer = barLayer;
+        Canvas canvas = canvasGO.AddComponent<Canvas>();
+        canvas.renderMode = RenderMode.ScreenSpaceCamera;
+        canvas.worldCamera = barCamera;
+        canvas.sortingOrder = 0;
+
+        // Single full-screen image
+        GameObject imgGO = new GameObject("BarImage");
+        imgGO.transform.SetParent(canvasGO.transform, false);
+        imgGO.layer = barLayer;
+        barImage = imgGO.AddComponent<Image>();
+        barImage.sprite = barSprite;
+        barImage.color = Color.white;
+        barImage.raycastTarget = false;
+        RectTransform rt = imgGO.GetComponent<RectTransform>();
+        rt.anchorMin = Vector2.zero;
+        rt.anchorMax = Vector2.one;
+        rt.offsetMin = Vector2.zero;
+        rt.offsetMax = Vector2.zero;
+
+        // Bar camera starts inactive; enabled by EnableEnforcement()
+        barCamera.gameObject.SetActive(false);
     }
 
     private void ApplyAspect()
@@ -95,6 +160,8 @@ public class AspectRatioEnforcer : MonoBehaviour
         }
 
         targetCamera.rect = currentRect;
+        if (barCamera != null) barCamera.gameObject.SetActive(true);
+        ApplyToSceneCameras();
     }
 }
 }

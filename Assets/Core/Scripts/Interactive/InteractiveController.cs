@@ -271,6 +271,11 @@ namespace Tek.Core
                 GameSession.CurrentManifest = manifest;
                 GameSession.ContainerSceneName = SceneManager.GetActiveScene().name;
                 ContainerReturnOverlay.EnsureExists(overlayPrefab, overlayButtonCorner, overlayButtonPadding);
+                AspectRatioEnforcer enforcer = FindObjectOfType<AspectRatioEnforcer>();
+                if (enforcer != null)
+                {
+                    enforcer.EnableEnforcement();
+                }
                 SceneManager.LoadScene(manifest.firstSceneName, LoadSceneMode.Single);
             }
             else
