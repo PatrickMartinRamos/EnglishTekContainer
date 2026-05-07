@@ -3023,7 +3023,7 @@ MonoBehaviour:
   overlayPrefab: {fileID: 8140076130552236305, guid: 374d600c8dd5b3245bcdeed3e86961f1,
     type: 3}
   overlayButtonCorner: 3
-  overlayButtonPadding: {x: 15, y: 65}
+  overlayButtonPadding: {x: 45, y: 65}
 --- !u!4 &1954797054
 Transform:
   m_ObjectHideFlags: 0

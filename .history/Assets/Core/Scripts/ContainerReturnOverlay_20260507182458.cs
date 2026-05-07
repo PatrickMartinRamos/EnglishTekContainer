@@ -78,6 +78,14 @@ namespace Tek.Core
             instance = this;
             DontDestroyOnLoad(gameObject);
 
+        private void OnDestroy()
+        {
+            if (instance == this)
+            {
+                instance = null;
+            }
+        }
+
             if (backButton != null)
             {
                 backButton.onClick.AddListener(ReturnToContainer);
@@ -97,14 +105,6 @@ namespace Tek.Core
             // Start hidden; Update will show it when the active scene is Title.
             SetVisible(false);
             lastVisible = false;
-        }
-
-        private void OnDestroy()
-        {
-            if (instance == this)
-            {
-                instance = null;
-            }
         }
 
         private void Update()
