@@ -12,7 +12,6 @@ namespace Tek.Core
     {
         [SerializeField] private string serverRoot = "http://localhost:8080/Interactive/";
         [SerializeField] private string grade = "grade1";
-        [SerializeField] private string catalogFileName = "catalog.json";
         [SerializeField] private string defaultCategory = string.Empty;
         [SerializeField] private string defaultUnit = string.Empty;
         // Optional prefix for auto-generated bundle file names: {bundlePrefix}.{grade}.{id}
@@ -22,7 +21,7 @@ namespace Tek.Core
         [SerializeField] private ContainerReturnOverlay overlayPrefab = null;
         [SerializeField] private OverlayButtonCorner overlayButtonCorner = OverlayButtonCorner.TopLeft;
         [SerializeField] private Vector2 overlayButtonPadding = new Vector2(10f, 10f);
-
+        private string catalogFileName = "catalog.json";
         private readonly List<InteractiveCatalogEntry> availableInteractives = new List<InteractiveCatalogEntry>();
         private Coroutine catalogLoadRoutine;
 
