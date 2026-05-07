@@ -150,7 +150,7 @@ namespace Tek.Core
                 SetStatus("Waiting for " + CatalogStringHelper.FormatCategoryLabel(normalizedCategory) + " interactives...");
                 return;
             }
-  
+
             pendingCategorySelection = null;
             ApplyCategoryFilter(normalizedCategory);
         }
