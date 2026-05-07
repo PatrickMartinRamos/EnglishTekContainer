@@ -94,7 +94,7 @@ namespace Tek.Core
                 visibilityTarget = canvasRoot;
             }
 
-            // Start hidden; Update will show it when the active scene is Title.
+            // Start hidden; Update will show it while an interactive is active.
             SetVisible(false);
             lastVisible = false;
         }
@@ -109,17 +109,20 @@ namespace Tek.Core
 
         private void Update()
         {
-            bool isTitle = string.Equals(
-                SceneManager.GetActiveScene().name, "Title",
-                System.StringComparison.OrdinalIgnoreCase);
+            Scene activeScene = SceneManager.GetActiveScene();
+            string containerScene = GameSession.ContainerSceneName;
+            bool hasInteractiveSession = GameSession.CurrentManifest != null;
+            bool inContainerScene = !string.IsNullOrEmpty(containerScene)
+                && string.Equals(activeScene.name, containerScene, System.StringComparison.OrdinalIgnoreCase);
+            bool shouldShow = hasInteractiveSession && !inContainerScene;
 
-            if (isTitle == lastVisible)
+            if (shouldShow == lastVisible)
             {
                 return;
             }
 
-            lastVisible = isTitle;
-            SetVisible(isTitle);
+            lastVisible = shouldShow;
+            SetVisible(shouldShow);
         }
 
         private void SetVisible(bool visible)
