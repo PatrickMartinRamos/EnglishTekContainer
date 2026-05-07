@@ -66,7 +66,7 @@ namespace Tek.Core
         private bool isFirstLaunchOffline;   // stuck state — do not hide
         private bool catalogDone;            // catalog succeeded or loaded from cache
         private bool imagesReady;            // ImagesReady fired (may arrive before catalogDone)
-        private bool interactiveLoadInProgress; // true while a game is downloading/loading
+        private bool interactiveLoadInProgress;
         private Coroutine notificationRoutine;
         private string messageBeforeNotification;
 
@@ -87,7 +87,7 @@ namespace Tek.Core
             controller.CatalogLoadFailed     += OnCatalogLoadFailed;
             controller.GameLoadOfflineBlocked += OnGameLoadOfflineBlocked;
             controller.GameLoadStarted       += OnGameLoadStarted;
-            controller.GameLoadFinished      += OnGameLoadFinished;
+            controller.GameLoadCompleted     += OnGameLoadCompleted;
             if (catalogMenu != null) catalogMenu.ImagesReady += OnImagesReady;
         }
 
@@ -98,7 +98,7 @@ namespace Tek.Core
             controller.CatalogLoadFailed     -= OnCatalogLoadFailed;
             controller.GameLoadOfflineBlocked -= OnGameLoadOfflineBlocked;
             controller.GameLoadStarted       -= OnGameLoadStarted;
-            controller.GameLoadFinished      -= OnGameLoadFinished;
+            controller.GameLoadCompleted     -= OnGameLoadCompleted;
             if (catalogMenu != null) catalogMenu.ImagesReady -= OnImagesReady;
         }
 
@@ -177,10 +177,10 @@ namespace Tek.Core
             ShowNotification(message, entry);
         }
 
-        private void OnGameLoadStarted(string message, InteractiveCatalogEntry entry)
+        private void OnGameLoadStarted(string gameId, bool requiresDownload)
         {
             interactiveLoadInProgress = true;
-            SetLabel(message);
+            SetLabel(requiresDownload ? "Downloading Interactive..." : "Loading Interactive...");
 
             if (loadingPanel != null)
             {
@@ -188,10 +188,19 @@ namespace Tek.Core
             }
         }
 
-        private void OnGameLoadFinished()
+        private void OnGameLoadCompleted(bool success, string message)
         {
-            // Only fired on failure — success transitions the scene, destroying this overlay.
             interactiveLoadInProgress = false;
+
+            if (success)
+            {
+                return;
+            }
+
+            if (!string.IsNullOrWhiteSpace(message))
+            {
+                SetLabel(message);
+            }
 
             if (loadingPanel != null)
             {
@@ -285,6 +294,11 @@ namespace Tek.Core
 
         private void HideAfterMinTime()
         {
+            if (interactiveLoadInProgress)
+            {
+                return;
+            }
+
             float elapsed = Time.realtimeSinceStartup - shownAt;
             float remaining = minimumDisplaySeconds - elapsed;
             if (remaining > 0f)

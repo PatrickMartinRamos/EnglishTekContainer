@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
+using TMPro;
 
 namespace Tek.Core
 {
@@ -30,6 +31,12 @@ namespace Tek.Core
         private GameObject canvasRoot;
         private GameObject visibilityTarget;  // the object show/hide — never the root GO
         private bool lastVisible;
+        private TMP_FontAsset resolvedFallbackFont;
+
+        [Header("TMP Recovery")]
+        [SerializeField] private bool reassignTmpOnSceneLoad = true;
+        [Tooltip("Optional fallback font. If empty, TMP Settings default is used.")]
+        [SerializeField] private TMP_FontAsset fallbackFontAsset = null;
 
         // Static pending settings written by EnsureExists before AddComponent,
         // so Awake can read the correct values when BuildCanvas runs.
@@ -97,6 +104,18 @@ namespace Tek.Core
             // Start hidden; Update will show it when the active scene is Title.
             SetVisible(false);
             lastVisible = false;
+
+            ResolveFallbackFont();
+        }
+
+        private void OnEnable()
+        {
+            SceneManager.sceneLoaded += OnSceneLoaded;
+        }
+
+        private void OnDisable()
+        {
+            SceneManager.sceneLoaded -= OnSceneLoaded;
         }
 
         private void Update()
@@ -128,12 +147,6 @@ namespace Tek.Core
             SetVisible(false);
             GameSession.CleanUp();
 
-            AspectRatioEnforcer enforcer = Object.FindObjectOfType<AspectRatioEnforcer>();
-            if (enforcer != null)
-            {
-                enforcer.DisableEnforcement();
-            }
-
             if (!string.IsNullOrEmpty(containerScene))
             {
                 SceneManager.LoadScene(containerScene, LoadSceneMode.Single);
@@ -142,6 +155,119 @@ namespace Tek.Core
             {
                 Debug.LogWarning("ContainerReturnOverlay: ContainerSceneName is not set. Cannot navigate back.");
             }
+        }
+
+        private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
+        {
+            if (!reassignTmpOnSceneLoad)
+            {
+                return;
+            }
+
+            if (string.IsNullOrEmpty(GameSession.ContainerSceneName))
+            {
+                return;
+            }
+
+            if (string.Equals(scene.name, GameSession.ContainerSceneName, System.StringComparison.OrdinalIgnoreCase))
+            {
+                return;
+            }
+
+            ResolveFallbackFont();
+            if (resolvedFallbackFont == null)
+            {
+                Debug.LogWarning("[TMP] No fallback TMP font was found. Skipping reassignment pass.");
+                return;
+            }
+
+            ReassignTmpInScene(scene);
+        }
+
+        private void ResolveFallbackFont()
+        {
+            if (fallbackFontAsset != null)
+            {
+                resolvedFallbackFont = fallbackFontAsset;
+                return;
+            }
+
+            if (TMP_Settings.defaultFontAsset != null)
+            {
+                resolvedFallbackFont = TMP_Settings.defaultFontAsset;
+                return;
+            }
+
+            resolvedFallbackFont = Resources.Load<TMP_FontAsset>("Fonts & Materials/LiberationSans SDF");
+        }
+
+        private void ReassignTmpInScene(Scene scene)
+        {
+            if (!scene.isLoaded)
+            {
+                return;
+            }
+
+            GameObject[] roots = scene.GetRootGameObjects();
+            int patched = 0;
+
+            for (int rootIndex = 0; rootIndex < roots.Length; rootIndex++)
+            {
+                TMP_Text[] texts = roots[rootIndex].GetComponentsInChildren<TMP_Text>(true);
+                for (int textIndex = 0; textIndex < texts.Length; textIndex++)
+                {
+                    if (TryRepairTmp(texts[textIndex]))
+                    {
+                        patched++;
+                    }
+                }
+            }
+
+            if (patched > 0)
+            {
+                Debug.Log("[TMP] Reassigned TMP font/material on " + patched + " text components in scene " + scene.name + ".");
+            }
+        }
+
+        private bool TryRepairTmp(TMP_Text text)
+        {
+            if (text == null || resolvedFallbackFont == null)
+            {
+                return false;
+            }
+
+            bool changed = false;
+
+            if (text.font == null)
+            {
+                text.font = resolvedFallbackFont;
+                changed = true;
+            }
+
+            if (text.fontSharedMaterial == null)
+            {
+                text.fontSharedMaterial = text.font != null ? text.font.material : resolvedFallbackFont.material;
+                changed = true;
+            }
+
+            Material material = text.fontSharedMaterial;
+            if (material != null)
+            {
+                Shader desiredShader = Shader.Find("TextMeshPro/Distance Field") ?? Shader.Find("TextMeshPro/Mobile/Distance Field");
+                if (desiredShader != null && material.shader != desiredShader)
+                {
+                    material.shader = desiredShader;
+                    changed = true;
+                }
+            }
+
+            if (changed)
+            {
+                text.UpdateMeshPadding();
+                text.ForceMeshUpdate();
+            }
+
+            return changed;
         }
 
         private void ApplySettings(OverlayButtonCorner corner, Vector2 padding)

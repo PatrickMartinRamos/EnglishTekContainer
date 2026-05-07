@@ -128,12 +128,6 @@ namespace Tek.Core
             SetVisible(false);
             GameSession.CleanUp();
 
-            AspectRatioEnforcer enforcer = Object.FindObjectOfType<AspectRatioEnforcer>();
-            if (enforcer != null)
-            {
-                enforcer.DisableEnforcement();
-            }
-
             if (!string.IsNullOrEmpty(containerScene))
             {
                 SceneManager.LoadScene(containerScene, LoadSceneMode.Single);

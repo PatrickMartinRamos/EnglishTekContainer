@@ -99,9 +99,11 @@ namespace Tek.Core
         {
             InteractiveCatalogEntry matchedEntry = FindCatalogEntry(gameId);
             bool isCached = IsInteractiveCached(gameId);
-            string title = matchedEntry != null && !string.IsNullOrWhiteSpace(matchedEntry.title) ? matchedEntry.title : gameId;
-            string loadMsg = isCached ? ("Loading " + title + "...") : ("Downloading " + title + "...");
-            GameLoadStarted?.Invoke(loadMsg, matchedEntry);
+            if (!isCached)
+            {
+                string title = matchedEntry != null && !string.IsNullOrWhiteSpace(matchedEntry.title) ? matchedEntry.title : gameId;
+                GameLoadStarted?.Invoke("Downloading " + title + "...", matchedEntry);
+            }
 
             StartCoroutine(DownloadAndStartRoutine(BuildDownloadTarget(gameId, matchedEntry), matchedEntry, isCached));
         }
@@ -242,15 +244,6 @@ namespace Tek.Core
 
         private IEnumerator DownloadAndStartRoutine(DownloadTarget target, InteractiveCatalogEntry entry, bool alreadyCached)
         {
-            // Unload any stale bundles from a previous interactive that may not have been
-            // cleaned up (e.g. when the game returned to container via its own UI instead
-            // of the ContainerReturnOverlay back button). Stale bundles cause LoadFromMemoryAsync
-            // to return the wrong bundle when internal names collide, resulting in a white screen.
-            if (GameSession.CurrentAssetBundle != null || GameSession.CurrentSceneBundle != null)
-            {
-                GameSession.CleanUp();
-            }
-
             string gameId = target.requestedId;
             string folderPath = BuildFolderUrl(target.folderName);
             string fileNameBase = target.bundleFileNameBase;
@@ -397,7 +390,10 @@ namespace Tek.Core
 
         private void NotifyGameLoadFinished(bool alreadyCached)
         {
-            GameLoadFinished?.Invoke();
+            if (!alreadyCached)
+            {
+                GameLoadFinished?.Invoke();
+            }
         }
 
         private string GetCacheDirectory(string gameId)

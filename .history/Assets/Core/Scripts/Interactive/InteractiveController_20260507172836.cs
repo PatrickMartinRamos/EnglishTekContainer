@@ -99,9 +99,11 @@ namespace Tek.Core
         {
             InteractiveCatalogEntry matchedEntry = FindCatalogEntry(gameId);
             bool isCached = IsInteractiveCached(gameId);
-            string title = matchedEntry != null && !string.IsNullOrWhiteSpace(matchedEntry.title) ? matchedEntry.title : gameId;
-            string loadMsg = isCached ? ("Loading " + title + "...") : ("Downloading " + title + "...");
-            GameLoadStarted?.Invoke(loadMsg, matchedEntry);
+            if (!isCached)
+            {
+                string title = matchedEntry != null && !string.IsNullOrWhiteSpace(matchedEntry.title) ? matchedEntry.title : gameId;
+                GameLoadStarted?.Invoke("Downloading " + title + "...", matchedEntry);
+            }
 
             StartCoroutine(DownloadAndStartRoutine(BuildDownloadTarget(gameId, matchedEntry), matchedEntry, isCached));
         }
@@ -397,7 +399,10 @@ namespace Tek.Core
 
         private void NotifyGameLoadFinished(bool alreadyCached)
         {
-            GameLoadFinished?.Invoke();
+            if (!alreadyCached)
+            {
+                GameLoadFinished?.Invoke();
+            }
         }
 
         private string GetCacheDirectory(string gameId)
