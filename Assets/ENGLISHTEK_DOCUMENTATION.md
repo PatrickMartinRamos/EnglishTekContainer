@@ -1056,7 +1056,7 @@ Add:
 **Q: Why is this required?**
 A: IL2CPP stripping can remove classes that are only referenced in AssetBundle scenes.
 
-### Step 4: Implement Game Scripts Using Current Pattern
+<!-- ### Step 4: Implement Game Scripts Using Current Pattern
 
 Create at least: `GameManager`, `Title`, `Instructions` (or `Instuction` for legacy flow), `Difficulty`/`Settings`, `Game`, `Feedback`/`Trophy`, `SubmitScore`.
 
@@ -1071,7 +1071,7 @@ doc.LoadXml(asset.text);
 ```
 
 **Q: Why not use XmlLoader/IXmlLoadable?**
-A: Those helpers are not present in the current repository. Existing interactives all use direct loading.
+A: Those helpers are not present in the current repository. Existing interactives all use direct loading. -->
 
 ### Step 5: Build the Scene Flow
 
@@ -1103,7 +1103,7 @@ A: Case-sensitive paths break at runtime on Android/Linux.
 ### Step 7: Create/Configure `InteractiveManifest`
 
 Set:
-- `gameId` numeric value
+- `gameId` 
 - `firstSceneName = "Title"`
 - `allScenes` list
 - `prefabsToInclude` if needed
