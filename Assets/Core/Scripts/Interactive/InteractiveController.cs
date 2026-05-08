@@ -5,7 +5,6 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
-using TMPro;
 
 namespace Tek.Core
 {
@@ -307,10 +306,9 @@ namespace Tek.Core
             GameSession.CurrentAssetBundle = loadedAssetBundle;
             GameSession.CurrentSceneBundle = loadedSceneBundle;
 
-            // TMP font materials in AssetBundles can have their shader reference broken at load
-            // time even though the correct shader is in the build. Re-assigning the shader by
-            // name (the same thing you do manually in the Inspector) forces Unity to relink it.
-            FixBundleShaders(loadedAssetBundle);
+            // Keep bundle loading free from broad asset deserialization to avoid
+            // missing-script warnings from legacy/mismatched assets.
+            // TMP shader fixes are handled after scene load by BundleTMPShaderFixer.
 
             // Derive first scene from the scene bundle.
             // Direct manifest deserialization from external bundles is skipped to avoid
@@ -348,48 +346,6 @@ namespace Tek.Core
             {
                 NotifyGameLoadFinished();
                 Debug.LogError("Could not find any InteractiveManifest asset in the bundle Available assets: " + string.Join(", ", assetNames));
-            }
-        }
-
-        /// <summary>
-        /// Re-links shaders on every Material loaded from an AssetBundle by re-assigning each
-        /// material's shader via Shader.Find. This mirrors the manual Inspector fix of switching
-        /// the shader away and back, which resolves broken/invisible TMP text after bundle load.
-        /// Also re-links any missing atlas textures on TMP_FontAsset materials.
-        /// </summary>
-        private static void FixBundleShaders(AssetBundle bundle)
-        {
-            // Fix all materials (covers TMP and any other shaders that break on load).
-            Material[] materials = bundle.LoadAllAssets<Material>();
-            foreach (Material mat in materials)
-            {
-                if (mat == null || mat.shader == null) continue;
-                string shaderName = mat.shader.name;
-                Shader relinked = Shader.Find(shaderName);
-                if (relinked != null)
-                {
-                    mat.shader = relinked;
-                }
-                else
-                {
-                    Debug.LogWarning("[TMP] Shader not found in build: " + shaderName + " on material: " + mat.name);
-                }
-            }
-
-            // Also re-link atlas textures on TMP fonts in case _MainTex was lost.
-            TMP_FontAsset[] fontAssets = bundle.LoadAllAssets<TMP_FontAsset>();
-            foreach (TMP_FontAsset font in fontAssets)
-            {
-                if (font != null) ReinkFontAtlas(font);
-            }
-        }
-
-        private static void ReinkFontAtlas(TMP_FontAsset font)
-        {
-            if (font.material != null && font.atlasTexture != null && font.material.mainTexture == null)
-            {
-                font.material.mainTexture = font.atlasTexture;
-                Debug.Log("[TMP] Relinked atlas texture for font: " + font.name);
             }
         }
 

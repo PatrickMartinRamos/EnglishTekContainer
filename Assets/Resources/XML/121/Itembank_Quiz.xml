@@ -1,0 +1,34 @@
+<Activity>
+<Item><Question>Oscar had a (bland) cereal for dinner.</Question><Correct>taste</Correct><Wrong>sound</Wrong></Item>
+<Item><Question>I love eating (spicy) noodles. </Question><Correct>taste</Correct><Wrong>sound</Wrong></Item>
+<Item><Question>Theo's cookies are very (sweet). </Question><Correct>taste</Correct><Wrong>sound</Wrong></Item>
+<Item><Question>Leandro's painting looks (bland).</Question><Correct>sight</Correct><Wrong>taste</Wrong></Item>
+<Item><Question>Don't wear (loud) colors.</Question><Correct>sight</Correct><Wrong>sound</Wrong></Item>
+<Item><Question>Colds made Celine's voice (rough).</Question><Correct>sound</Correct><Wrong>feeling</Wrong></Item>
+<Item><Question>Ernesto has a (loud) voice. </Question><Correct>sound</Correct><Wrong>sight</Wrong></Item>
+<Item><Question>Your voice is so (soft). </Question><Correct>sound</Correct><Wrong>feeling</Wrong></Item>
+<Item><Question>Grab a (damp) cloth and wipe your hands.</Question><Correct>feeling</Correct><Wrong>sound</Wrong></Item>
+<Item><Question>Kean looked for (soft) fabrics.</Question><Correct>feeling</Correct><Wrong>sound</Wrong></Item>
+<Item><Question>Oscar kept the floor (dry).</Question><Correct>feeling</Correct><Wrong>sound</Wrong></Item>
+<Item><Question>Paul's knees scratched against the (rough) floor.</Question><Correct>feeling</Correct><Wrong>sound</Wrong></Item>
+<Item><Question>oily</Question><Correct>taste</Correct><Wrong>smell</Wrong></Item>
+<Item><Question>minty</Question><Correct>taste</Correct><Wrong>feeling</Wrong></Item>
+<Item><Question>cheesy</Question><Correct>taste</Correct><Wrong>sight</Wrong></Item>
+<Item><Question>buttery</Question><Correct>taste</Correct><Wrong>feeling</Wrong></Item>
+<Item><Question>creamy</Question><Correct>taste</Correct><Wrong>smell</Wrong></Item>
+<Item><Question>shiny</Question><Correct>sight</Correct><Wrong>taste</Wrong></Item>
+<Item><Question>bright</Question><Correct>sight</Correct><Wrong>taste</Wrong></Item>
+<Item><Question>musty</Question><Correct>smell</Correct><Wrong>smell</Wrong></Item>
+<Item><Question>stinky</Question><Correct>smell</Correct><Wrong>taste</Wrong></Item>
+<Item><Question>fishy</Question><Correct>smell</Correct><Wrong>feeling</Wrong></Item>
+<Item><Question>shrill</Question><Correct>sound</Correct><Wrong>taste</Wrong></Item>
+<Item><Question>creaky</Question><Correct>sound</Correct><Wrong>smell</Wrong></Item>
+<Item><Question>hollow</Question><Correct>sound</Correct><Wrong>smell</Wrong></Item>
+<Item><Question>raspy</Question><Correct>sound</Correct><Wrong>taste</Wrong></Item>
+<Item><Question>humid</Question><Correct>feeling</Correct><Wrong>taste</Wrong></Item>
+<Item><Question>coarse</Question><Correct>feeling</Correct><Wrong>smell</Wrong></Item>
+<Item><Question>chilly</Question><Correct>feeling</Correct><Wrong>smell</Wrong></Item>
+<Item><Question>hot</Question><Correct>feeling</Correct><Wrong>taste</Wrong></Item>
+</Activity>
+
+

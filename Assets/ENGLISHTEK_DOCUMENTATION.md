@@ -1,6 +1,6 @@
 # TekContainer — Complete Documentation
 
-> Last updated: April 21, 2026
+> Last updated: May 8, 2026
 > Unity project. Namespace root: `Tek.Core` (container), `EnglishTek.Grade1.ID###` / `EnglishTek.Grade2.ID###` (interactives).
 
 ---
@@ -23,10 +23,9 @@
    - 4.10 [ArcCarousel](#410-arccarousel)
    - 4.11 [CarouselHomeBackground](#411-carouselhomebackground)
    - 4.12 [InteractiveCacheClearer (Editor)](#412-interactivecacheclearer-editor)
-   - 4.13 [InteractiveCacheClearer (Editor)](#412-interactivecacheclearer-editor)
-   - 4.13b [BundleUrlHelper](#413b-bundleurlhelper)
-   - 4.14 [XmlLoader](#414-xmlloader)
-   - 4.15 [IXmlLoadable](#415-ixmlloadable)
+  - 4.13 [BundleUrlHelper](#413b-bundleurlhelper)
+  - 4.14 [XML Loading Pattern](#414-xml-loading-pattern-current-code)
+  - 4.15 [GameManager Pattern](#415-gamemanager-pattern-current-code)
    - 4.16 [AspectRatioEnforcer](#416-aspectratioenforcer)
    - 4.17 [InteractivePacker (Container Editor)](#417-interactivepacker-container-editor)
 5. [Interactive Games Reference](#5-interactive-games-reference)
@@ -34,6 +33,8 @@
    - 5.2 [ID213 — A Day at the Beach (Grade 1, Grammar)](#52-id213--a-day-at-the-beach-grade-1-grammar)
    - 5.3 [ID101 — Whack-a-Mushroom (Grade 2, FilipinoTek)](#53-id101--whack-a-mushroom-grade-2-filipinotek)
    - 5.4 [ID232 — Grade 2 Grammar (Robot Factory)](#54-id232--grade-2-grammar-robot-factory)
+    - 5.5 [ID102 — FilipinoTek Grade 2 (Legacy Flow)](#55-id102--filipinotek-grade-2-legacy-flow)
+    - 5.6 [ID313 — Grade 1 Grammar](#56-id313--grade-1-grammar)
 6. [Server Layout & Bundle Naming](#6-server-layout--bundle-naming)
 7. [Catalog JSON Schema](#7-catalog-json-schema)
 8. [Data Flow — End to End](#8-data-flow--end-to-end)
@@ -68,39 +69,40 @@ EnglishTekContainer/
 │   │   │   └── InteractiveCacheClearer.cs      ← Toolbar to clear bundle cache
 │   │   ├── Scripts/
 │   │   │   ├── GameSession.cs                  ← Global session state
-│   │   │   ├── IXmlLoadable.cs                 ← Optional interface for new game managers
-│   │   │   ├── XmlLoader.cs                    ← Centralized XML loading utility
 │   │   │   ├── ContainerReturnOverlay.cs       ← Persistent back button
 │   │   │   ├── Interactive/
 │   │   │   │   ├── InteractiveController.cs    ← Main coordinator
 │   │   │   │   ├── InteractiveCatalogMenu.cs   ← Catalog UI
-│   │   │   │   ├── CatalogMenuNavigator.cs     ← Animated nav extension
 │   │   │   │   ├── InteractiveCatalogEntry.cs  ← Data model
-│   │   │   │   └── InteractiveManifest.cs      ← ScriptableObject for a game
+│   │   │   │   ├── InteractiveManifest.cs      ← ScriptableObject for a game
+│   │   │   │   └── BundleUrlHelper.cs          ← URL/path helpers
 │   │   │   ├── Catalog/
 │   │   │   │   ├── CatalogFilter.cs
 │   │   │   │   ├── CatalogStringHelper.cs
 │   │   │   │   ├── CatalogThumbnailLoader.cs
+│   │   │   │   ├── CatalogMenuNavigator.cs     ← Animated nav extension
 │   │   │   │   └── CatalogUiFactory.cs
 │   │   │   └── UI/
 │   │   │       ├── ArcCarousel.cs
+│   │   │       ├── UIGroup.cs
 │   │   │       ├── AspectRatioEnforcer.cs      ← Letterbox aspect ratio enforcer
 │   │   │       └── CarouselHomeBackground.cs
-│   │   ├── Editor/
-│   │   │   ├── InteractiveCacheClearer.cs      ← Toolbar to clear bundle cache
-│   │   │   └── InteractivePacker.cs            ← Editor tool: import XML, tag/build bundles
 │   │   └── InteractiveScripts/
 │   │       ├── ID101_Scripts/   (ID101.asmdef)  ← FilipinoTek.Grade2.ID101
+│   │       ├── ID102_Scripts/   (ID102.asmdef)  ← FilipinoTek.Grade2.ID102
 │   │       ├── ID106_Scripts/   (ID106.asmdef)
 │   │       ├── ID213_Scripts/   (ID213.asmdef)
-│   │       └── ID232_Scripts/   (ID232.asmdef)
+│   │       ├── ID232_Scripts/   (ID232.asmdef)
+│   │       └── ID313_Scripts/   (ID313.asmdef)
 │   ├── link.xml                               ← IL2CPP stripping preservation list
 │   └── Resources/
+│       ├── 102/                               ← Legacy ID102 XML root (no XML/ prefix)
 │       └── XML/                               ← All game XML — loaded via Resources.Load
 │           ├── 101/  (Itembanks.xml, Dialougebanks.xml, Instructions_Level1.xml …)
 │           ├── 106/  (Instruction.xml, Itembank_Practice.xml, Feedback.xml …)
 │           ├── 213/  (Instruction.xml, Itembank_Practice.xml, Feedback.xml …)
-│           └── 232/  (Instruction.xml, Itembank_Practice.xml, Feedback.xml …)
+│           ├── 232/  (Instruction.xml, Itembank_Practice.xml, Feedback.xml …)
+│           └── 313/  (Instruction.xml, Itembank_Practice.xml, Feedback.xml …)
 └── ProjectSettings/
 ```
 
@@ -170,7 +172,7 @@ Central coordinator. One instance per grade, lives in the container scene.
 | `serverRoot` | `http://localhost:8080/Interactive/` | Base URL for all server requests. |
 | `grade` | `grade1` | Grade prefix for catalog and bundle names. Use `grade2` for Grade 2. |
 | `bundlePrefix` | _(empty)_ | Prefix for bundle file names. Set in Inspector per product (e.g. `englishtek`, `filipinotek`). |
-| `catalogFileName` | `catalog.json` | File appended to grade path to form the catalog URL. |
+| `catalogFileName` | `catalog.json` | Constant in code (not Inspector-exposed). |
 | `defaultCategory` | _(empty)_ | Fallback category for default folder paths. |
 | `defaultUnit` | _(empty)_ | Fallback unit for default folder paths. |
 | `refreshCatalogOnStart` | `true` | Auto-fetch catalog on `Start()`. |
@@ -185,8 +187,13 @@ Central coordinator. One instance per grade, lives in the container scene.
 | `AvailableInteractives` | `IReadOnlyList<InteractiveCatalogEntry>` — current catalog entries. |
 | `CatalogUpdated` | `event Action<IReadOnlyList<InteractiveCatalogEntry>>` |
 | `CatalogLoadFailed` | `event Action<string>` — error message on failure. |
+| `GameLoadOfflineBlocked` | `event Action<string, InteractiveCatalogEntry>` — fired when not cached and offline. |
+| `GameLoadStarted` | `event Action<string, InteractiveCatalogEntry>` — loading/downloading status message. |
+| `GameLoadFinished` | `event Action` — fired after success/failure handling completes. |
 | `RefreshCatalog()` | Re-fetches catalog JSON from server. |
 | `RequestGameLoad(string gameId)` | Downloads and launches the game. |
+| `IsInteractiveCached(string gameId)` | `true` when both bundle files exist in local cache. |
+| `IsCatalogCached()` | `true` when the grade catalog was cached locally. |
 | `ResolveCatalogAssetUrl(entry, assetPath)` | Resolves relative image paths to absolute URLs. |
 
 #### URL Conventions
@@ -205,7 +212,9 @@ Bundles are cached at:
 ```
 Application.persistentDataPath/InteractiveCache/{cacheKey}/
 ```
-Cache is tried first on every load. Clear via **EnglishTek → Clear Interactive Cache** in the Unity toolbar.
+Cache is tried first on every load. Clear via **TekContainer → Clear Interactive Cache** in the Unity toolbar.
+
+`InteractiveController` also version-resets all persistent caches (`CatalogCache`, `InteractiveCache`, `ThumbnailCache`) when `Application.version` changes.
 
 ---
 
@@ -226,7 +235,7 @@ Describes a game bundle. Created in the game project and baked into the `.assets
 | `prefabsToInclude` | `GameObject[]` | Prefabs force-included in `.assets`. |
 | `GetXMLText(key)` | `string` | Loads `Resources/XML/{gameId}/{key}` first. Falls back to `xmlConfigs` if the Resources file is missing. Returns `null` if neither is found. |
 
-> **XML is never bundled.** Files live in `Assets/Resources/XML/{gameId}/` in the container and are loaded at runtime via `Resources.Load`. Use [InteractivePacker](#416-interactivepacker-container-editor) to import XML from the game project into the container.
+> **XML is never bundled.** Files live in `Assets/Resources/XML/{gameId}/` in the container and are loaded at runtime via `Resources.Load`. Use [InteractivePacker](#417-interactivepacker-container-editor) to import XML from the game project into the container when the tool is installed.
 
 ---
 
@@ -245,7 +254,13 @@ One entry in `catalog.json`.
 | `unit` | No | Unit (e.g. `"unit1"`). |
 | `image` | No | Thumbnail path relative to entry folder. |
 | `home` | No | Full-bleed background path. |
+| `folder` | No | Explicit folder override (e.g. `Grade 1/grammar/unit1/ID106`). |
+| `grade` | No | Grade override used when composing default folder/bundle paths. |
+| `bundleBaseName` | No | Explicit bundle base override (e.g. `englishtek.grade1.id106`). |
+| `bundleVersion` | No | Version suffix used in cache key to force re-download on updates. |
 | `enabled` | Yes | `false` hides entry from UI without removing it. |
+
+`DisplayName` property returns `title` when available, otherwise `id`.
 
 Root catalog document: `{ "interactives": [ ... ] }`.
 
@@ -284,7 +299,7 @@ Renders catalog as three-level navigation: **Category → Unit → Entry**.
 
 ### 4.6 `CatalogMenuNavigator`
 
-**File:** `Assets/Core/Scripts/Interactive/CatalogMenuNavigator.cs`
+**File:** `Assets/Core/Scripts/Catalog/CatalogMenuNavigator.cs`
 **Type:** Extends `InteractiveCatalogMenu` — `Tek.Core`
 
 Adds animated UIGroup transitions between navigation levels.
@@ -296,6 +311,8 @@ Adds animated UIGroup transitions between navigation levels.
 | `categoryGroup` | Container holding category buttons | Hidden after category is picked. |
 | `unitGroup` | Container holding unit buttons | Shown after category pick; hidden after unit pick. |
 | `entryGroup` | Container holding entry buttons | Shown after unit pick. |
+| `lessonBackButtonGroup` | Optional `UIGroup` for back button visibility | Shown only in unit/entry levels. |
+| `lessonBackButtonObject` | Optional `GameObject` fallback | Used when back button is not a `UIGroup`. |
 
 #### Additional Methods
 
@@ -333,7 +350,7 @@ Persistent back button overlay shown inside the running interactive.
 
 ### 4.8 `UIGroup`
 
-**File:** `Assets/Core/Scripts/UIGroup.cs`
+**File:** `Assets/Core/Scripts/UI/UIGroup.cs`
 **Type:** `MonoBehaviour` — `Tek.Core`
 
 Attach to any UI container to give it animated show/hide. Manages a `CanvasGroup` automatically.
@@ -354,9 +371,11 @@ Attach to any UI container to give it animated show/hide. Manages a `CanvasGroup
 |--------|-------------|
 | `Show(Action onComplete = null)` | Animate into view. |
 | `Hide(Action onComplete = null)` | Animate out, then deactivate. |
+| `HideWith(UIGroupAnimation overrideAnimation, Action onComplete = null)` | One-shot hide animation override. |
 | `ShowImmediate()` | Snap visible, no animation. |
 | `HideImmediate()` | Snap hidden, deactivate, no animation. |
 | `IsVisible` | `bool` — current visibility. |
+| `OnShown` | `event Action` — fired when show completes. |
 
 **Chaining example:**
 ```csharp
@@ -505,65 +524,55 @@ Static URL and path helpers extracted from `InteractiveController`. Not called d
 
 | Method | Description |
 |--------|-------------|
-| `NormalizePathPart(s)` | Trims and lowercases a path segment. |
-| `NormalizeLookupId(id)` | Uppercases and strips leading `ID` for numeric comparison. |
-| `NormalizeCacheKey(id)` | Lowercases a cache key string. |
+| `NormalizePathPart(s)` | Trims and normalizes slashes in a path segment. |
+| `NormalizeLookupId(id)` | Uppercases and ensures `ID` prefix. |
+| `NormalizeCacheKey(id)` | Normalizes cache key and replaces slashes/spaces with `_`. |
 | `EncodePathSegments(s)` | URL-encodes spaces and special chars in a path segment. |
-| `BuildDefaultFolderPath(category, unit, id)` | Returns `"{category}/{unit}/{id}/"`. |
+| `BuildDefaultFolderPath(grade, category, unit, id)` | Returns `"{grade}/{category}/{unit}/{id}"` omitting empty parts. |
 | `BuildDefaultBundleBaseName(prefix, grade, id)` | Returns `"{prefix}.{grade}.{id}"` (all lowercase). |
-| `BuildCacheKey(prefix, grade, id)` | Returns the normalized cache-directory key. |
+| `BuildCacheKey(gameId, bundleBase, version)` | Returns normalized cache-directory key with optional version suffix. |
 
 ---
 
-### 4.14 `XmlLoader`
+### 4.14 `XML Loading Pattern (Current Code)`
 
-**File:** `Assets/Core/Scripts/XmlLoader.cs`
-**Type:** `static class` — `Tek.Core`
+There is currently **no** `XmlLoader.cs` utility in this repository. Interactives load XML directly with `Resources.Load` and then parse via `XmlDocument`.
 
-Centralized XML loading utility. All XML lives under `Resources/XML/{id}/{filename}`. New game managers should call these methods instead of building paths manually. Existing game managers are not required to change.
-
-| Method | Description |
-|--------|-------------|
-| `LoadItembank(id, difficulty)` | Loads `XML/{id}/Itembank_{difficulty}`, falls back to `XML/{id}/Itembanks`. |
-| `LoadFeedback(id)` | Loads `XML/{id}/Feedback`. |
-| `LoadInstruction(id, difficulty)` | Loads `XML/{id}/Instruction`, falls back to `XML/{id}/Instructions_{difficulty}`. |
-| `LoadDialoguebank(id, difficulty)` | Loads `XML/{id}/Dialougebanks`, falls back to `XML/{id}/Dialoguebank_{difficulty}`. |
-| `LoadRaw(resourcePath)` | Loads any XML by its full Resources-relative path. |
-| `IdFromNamespace(namespaceName)` | Parses the game ID integer from a namespace ending in `ID###`. |
-| `FeedbackNodeName(score, total)` | Returns `"Perfect"` / `"Average"` / `"Fail"` based on percentage. |
-
-All methods return `XmlDocument` or `null` with a `LogError` if the file is missing.
-
-**Typical usage in a new GameManager:**
+Common pattern used by ID106 / ID213 / ID232 / ID313:
 ```csharp
-using Tek.Core;
+string path = "XML/" + GameManager.GameID + "/Itembank_" + difficulty;
+TextAsset asset = Resources.Load<TextAsset>(path);
+if (asset == null) { Debug.LogError("Missing XML: " + path); return; }
 
-private static int _id = XmlLoader.IdFromNamespace(typeof(GameManager).Namespace); // → 213
+XmlDocument doc = new XmlDocument();
+doc.LoadXml(asset.text);
+```
 
-public static void LoadItems(string difficulty)
-{
-    XmlDocument doc = XmlLoader.LoadItembank(_id, difficulty);
-    // parse doc...
-}
+Legacy FilipinoTek pattern used by ID101:
+```csharp
+Resources.Load<TextAsset>("XML/101/Itembanks");
+Resources.Load<TextAsset>("XML/101/Dialougebanks"); // Intentional historical spelling
+```
+
+Legacy FilipinoTek pattern used by ID102:
+```csharp
+Resources.Load<TextAsset>("102/Itembanks");
+Resources.Load<TextAsset>("102/Dialougebanks");
 ```
 
 ---
 
-### 4.15 `IXmlLoadable`
+### 4.15 `GameManager Pattern (Current Code)`
 
-**File:** `Assets/Core/Scripts/IXmlLoadable.cs`
-**Namespace:** `Tek.Core`
+There is currently **no** shared `IXmlLoadable` interface in this repository. Existing interactives use a static `GameManager` class per game, typically with:
 
-Optional interface for new game managers. Not used by any existing class — provided for future tooling.
+- `Initialize()` to reset score/session state
+- `GenerateItem()` or `LoadItembanks()` to load data for selected difficulty
+- `NextItem()` to progress gameplay
+- `CheckAnswer()` for validation
+- `Feedback()` or equivalent to map score to response text
 
-```csharp
-public interface IXmlLoadable
-{
-    int    GameID     { get; }
-    string Difficulty { get; }
-    void   LoadXmlData();
-}
-```
+For new games, use ID106 or ID213 as the baseline unless your design specifically matches the ID101/ID102 style.
 
 ---
 
@@ -585,7 +594,7 @@ On `Awake`: calls `DontDestroyOnLoad`, creates a `BarCamera` child, and computes
 
 ### 4.17 `InteractivePacker` (Container Editor)
 
-**File:** `Assets/Core/Editor/InteractivePacker.cs`
+**File status:** `Assets/Core/InteractivePackerV3.zip` (packaged, not extracted in current workspace)
 **Menu:** `Tools → Interactive Game Packer`
 **Namespace:** `Tek.Core`
 
@@ -595,7 +604,7 @@ Editor window for preparing a game's AssetBundle and syncing XML/namespaces.
 
 | Button | Action |
 |--------|--------|
-| **Import XML to Container (Resources)** | Copies every `xmlConfigs` entry from the manifest to `Assets/Resources/XML/{gameId}/{key}.xml`. XML is NOT tagged in the bundle. |
+| **Import XML to Container (Resources)** | Copies every `xmlConfigs` entry from the manifest into container `Resources`. XML is NOT tagged in the bundle. |
 | **1. Tag Assets for Bundle** | Sets AssetBundle names: manifest + prefabs → `{name}.assets`; scenes → `{name}.scenes`. |
 | **2. Build Asset Bundle** | Calls `BuildPipeline.BuildAssetBundles` for Android into `ServerData/`. |
 | **3. Apply Namespace to C# Files** | Renames all `namespace` declarations in the selected script folder to match the bundle name. |
@@ -607,7 +616,7 @@ Editor window for preparing a game's AssetBundle and syncing XML/namespaces.
 - Files with `[assembly:]` attributes are skipped automatically.
 - `using` directives are preserved outside the namespace block.
 
-> **Also exists in individual game projects** as a simpler version (no XML import button, no Container Setup section).
+> In this workspace, the packer is distributed as a zip. If it is not imported in Unity yet, follow the manual bundle/XML workflow in Section 12.
 
 ---
 
@@ -618,9 +627,9 @@ All interactives follow this scene flow:
 Title → Instructions → Difficulty → Game → Feedback
 ```
 
-Scripts load XML via `Resources.Load<TextAsset>("XML/{id}/filename")` or the `XmlLoader` static class.
+Scripts load XML via `Resources.Load<TextAsset>(...)` in each game's `GameManager`.
 XML files live in `Assets/Resources/XML/{id}/` in the container — they are **not bundled** with the game.
-Use the [InteractivePacker](#416-interactivepacker-container-editor) editor tool to import XML from the individual project into the container.
+ID102 is a legacy exception that loads from `Assets/Resources/102/` (without `XML/` prefix).
 
 ---
 
@@ -693,7 +702,7 @@ Use the [InteractivePacker](#416-interactivepacker-container-editor) editor tool
 
 | Script | Description |
 |--------|-------------|
-| `GameManager` | Static data hub. XML loaded from manifest via `GetXMLTextWithFallback()`. |
+| `GameManager` | Static data hub. XML loaded directly via `Resources.Load("XML/213/...")`. |
 | `Title` | Auto-wires Play button listener at runtime (`Awake`) in case Inspector OnClick is missing in container scene. |
 | `Instructions` | Displays instructions. `StartGame()` → loads Difficulty. |
 | `Difficulty` | Sets difficulty, calls `GenerateItem()`, loads Game. |
@@ -704,7 +713,7 @@ Use the [InteractivePacker](#416-interactivepacker-container-editor) editor tool
 
 | Issue | Cause | Fix |
 |-------|-------|-----|
-| Title script not attached in container | Stale bundle built before ID232 asmdef was created (Assembly-CSharp vs ID232 mismatch) | Clear cache via **EnglishTek → Clear Interactive Cache → ID232**, then reload |
+| Title script not attached in container | Stale bundle built before asmdef split (Assembly-CSharp vs ID### mismatch) | Clear cache via **TekContainer → Clear Interactive Cache → All**, then reload |
 | XML not loading | `Resources.Load` path does not match the file location under `Assets/Resources/` | Verify file exists at `Resources/XML/213/{filename}` with exact case |
 
 ---
@@ -766,6 +775,64 @@ Use the [InteractivePacker](#416-interactivepacker-container-editor) editor tool
 | `Game` | Main game loop. |
 | `Feedback` | Displays feedback. `Play()` → reloads Title. |
 | `SubmitScore` | Posts score to LMS API. |
+
+---
+
+### 5.5 ID102 — FilipinoTek Grade 2 (Legacy Flow)
+
+**Namespace:** `FilipinoTek.Grade2.ID102` | **Assembly:** `ID102`
+
+#### XML Files (`Resources/102/`)
+
+| File | Loaded by | Notes |
+|------|-----------|-------|
+| `Itembanks.xml` | `Resources.Load("102/Itembanks")` | Legacy path format (no `XML/` prefix). |
+| `Dialougebanks.xml` | `Resources.Load("102/Dialougebanks")` | Historical spelling retained in code/data. |
+| `Instructions_Level1.xml` | `Resources.Load("102/Instructions_Level1")` | Per-level instructions. |
+| `Instructions_Level2.xml` | `Resources.Load("102/Instructions_Level2")` | |
+| `Instructions_Level3.xml` | `Resources.Load("102/Instructions_Level3")` | |
+
+#### Scripts
+
+| Script | Description |
+|--------|-------------|
+| `GameManager` | Uses level-based flow (`Level 1/2/3`) and loads `Itembanks` + `Dialougebanks` via legacy paths. |
+| `Title` | Entry screen. |
+| `Instuction` | Instruction scene (legacy filename spelling). |
+| `Settings` | Level selection scene. |
+| `Game` | Main gameplay loop. |
+| `Trophy` | Results/feedback scene. |
+| `SubmitScore` | Score submission coroutine. |
+
+---
+
+### 5.6 ID313 — Grade 1 Grammar
+
+**Namespace:** `EnglishTek.Grade1.ID313` | **Assembly:** `ID313`
+
+#### XML Files (`Resources/XML/313/`)
+
+| File | Loaded by |
+|------|-----------|
+| `Instruction.xml` | `Resources.Load("XML/313/Instruction")` |
+| `Itembank_Practice.xml` | `Resources.Load("XML/313/Itembank_Practice")` |
+| `Itembank_Workout.xml` | `Resources.Load("XML/313/Itembank_Workout")` |
+| `Itembank_Quiz.xml` | `Resources.Load("XML/313/Itembank_Quiz")` |
+| `Feedback.xml` | `Resources.Load("XML/313/Feedback")` |
+
+#### Scripts
+
+| Script | Description |
+|--------|-------------|
+| `GameManager` | Same static model as ID106/ID213/ID232 (`Initialize`, `GenerateItem`, `NextItem`, `CheckAnswer`, `Feedback`). |
+| `Title` | Initializes manager and opens instruction flow. |
+| `Instructions` | Displays `GameManager.Instructions`. |
+| `Difficulty` | Sets Practice/Workout/Quiz. |
+| `Game` | Main gameplay scene. |
+| `Feedback` | Displays score feedback and loops back to `Title`. |
+| `SubmitScore` | LMS submission logic. |
+
+> Note: `ID313` exists in scripts/resources in this repository but is not currently preserved in `Assets/link.xml` by default. Add `<assembly fullname="ID313" preserve="all"/>` before Android release builds that include this interactive.
 
 ---
 
@@ -860,7 +927,7 @@ Examples:
 11. ContainerReturnOverlay.EnsureExists() → DontDestroyOnLoad
 12. SceneManager.LoadScene("Title")
 13. Game runs:
-      GameManager uses Resources.Load("XML/{id}/...") or XmlLoader
+      GameManager uses Resources.Load("XML/{id}/...")
       → Instructions → Difficulty → Game → Feedback
 14. Feedback → SubmitScore → LMS API
 15. User presses Back on overlay
@@ -910,7 +977,7 @@ Wire a back button → `CatalogMenuNavigator.GoBack()`.
 
 ---
 
-## 10. LMS Score Submission (TODO)
+<!-- ## 10. LMS Score Submission (TODO)
 
 **File:** `Assets/Core/InteractiveScripts/ID###_Scripts/SubmitScore.cs`
 
@@ -938,7 +1005,7 @@ POST https://tekteachlms-api.com/api/Student/{studentId}/class/{classId}/interac
 **Always call via coroutine:**
 ```csharp
 StartCoroutine(submitScore.PostScores(diff, score));
-```
+``` -->
 
 ---
 
@@ -949,7 +1016,7 @@ StartCoroutine(submitScore.PostScores(diff, score));
 | "Associated script cannot be loaded" in Inspector | Bundle built from old Assembly-CSharp; container uses ID### asmdef | Clear cache for that ID, rebuild bundle from the same project that was used to create the asmdef |
 | Play button works but scene does not change | OnClick not wired in bundled scene | Title.Awake() auto-wires if no persistent listeners exist |
 | XML returns null at runtime | Wrong path or file not imported to Resources | Verify `Assets/Resources/XML/{id}/{filename}.xml` exists; re-run **Import XML to Container** |
-| Stale bundle loaded after update | Local cache still has old file | **TekContainer → Clear Interactive Cache → [ID]** or bump `bundleVersion` in catalog |
+| Stale bundle loaded after update | Local cache still has old file | **TekContainer → Clear Interactive Cache → All** or bump `bundleVersion` in catalog |
 | Script attached but Play does nothing | Null reference throws before `LoadScene` | Check Console for NullReferenceException; ensure all Inspector refs are assigned |
 | Android build crashes on interactive load | IL2CPP stripped interactive assemblies | Ensure `link.xml` preserves all ID### assemblies |
 | Bundle loads but scenes are empty | Bundle built for wrong platform (e.g. WebGL bundle on Android) | Rebuild bundle for target platform, clear cache |
@@ -959,115 +1026,135 @@ StartCoroutine(submitScore.PostScores(diff, score));
 
 ## 12. Adding a New Interactive — Step by Step
 
-### Step 1: Set Up Script Namespace and Assembly
+### Step 1: Define ID, Product, Grade
 
-1. Create folder `Assets/Core/InteractiveScripts/ID###_Scripts/`.
-2. Create `ID###.asmdef`.
-3. Use namespace matching your product line (e.g. `EnglishTek.Grade1.ID###` or `FilipinoTek.Grade2.ID###`).
-4. Add `<assembly fullname="ID###" preserve="all"/>` to `Assets/link.xml`.
+**Q: What should I lock first?**
+A: Lock `ID###`, product line (`englishtek` or `filipinotek`), and grade (`grade1`/`grade2`).
 
-### Step 2: Create the Five Game Scripts
+**Q: Why is this first?**
+A: The same values drive namespace, asmdef name, bundle names, server path, and catalog entry.
 
-Copy from ID106 or ID213 as a baseline and update all namespaces.
+### Step 2: Create Script Folder, asmdef, Namespace
 
-**Minimum required scripts:** `GameManager`, `Title`, `Instructions`, `Difficulty`, `Game`, `Feedback`, `SubmitScore`.
+1. Create `Assets/Core/InteractiveScripts/ID###_Scripts/`.
+2. Add `ID###.asmdef`.
+3. Use namespace format matching current project conventions:
+   - `EnglishTek.Grade1.ID###`
+   - `EnglishTek.Grade2.ID###`
+   - `FilipinoTek.Grade2.ID###`
 
-**GameManager pattern — use `Resources.Load` or `XmlLoader`:**
-```csharp
-using Tek.Core;
-using System.Xml;
-using UnityEngine;
+**Q: Why do this before coding?**
+A: Bundle scene scripts resolve by assembly + type name. Wrong asmdef/namespace leads to missing-script errors.
 
-// Option A: XmlLoader (recommended for new games)
-private static int _id = XmlLoader.IdFromNamespace(typeof(GameManager).Namespace);
+### Step 3: Update `link.xml`
 
-public static void LoadItems(string difficulty)
-{
-    XmlDocument doc = XmlLoader.LoadItembank(_id, difficulty);
-    if (doc == null) { Debug.LogError("Itembank not found"); return; }
-    // parse doc...
-}
-
-public static void LoadInstruction()
-{
-    XmlDocument doc = XmlLoader.LoadInstruction(_id);
-    // parse doc...
-}
-
-public static string GetFeedbackNode(int score, int total)
-    => XmlLoader.FeedbackNodeName(score, total); // "Perfect" / "Average" / "Fail"
-
-// Option B: Direct Resources.Load
-public static void LoadItems(string difficulty)
-{
-    TextAsset asset = Resources.Load<TextAsset>("XML/###/Itembank_" + difficulty);
-    if (asset == null) { Debug.LogError("..."); return; }
-    XmlDocument doc = new XmlDocument();
-    doc.LoadXml(asset.text);
-    // parse doc...
-}
+Add:
+```xml
+<assembly fullname="ID###" preserve="all"/>
 ```
 
-### Step 3: The Scene Flow
+**Q: Why is this required?**
+A: IL2CPP stripping can remove classes that are only referenced in AssetBundle scenes.
 
-Unity scenes: `Title`, `Instructions`, `Difficulty`, `Game`, `Feedback`.
+### Step 4: Implement Game Scripts Using Current Pattern
 
-Each scene uses `SceneManager.LoadScene("SceneName")` to transition.
+Create at least: `GameManager`, `Title`, `Instructions` (or `Instuction` for legacy flow), `Difficulty`/`Settings`, `Game`, `Feedback`/`Trophy`, `SubmitScore`.
 
-### Step 4: Prepare XML Files
+Use direct `Resources.Load` in `GameManager`:
+```csharp
+string path = "XML/###/Itembank_" + difficulty;
+TextAsset asset = Resources.Load<TextAsset>(path);
+if (asset == null) { Debug.LogError("Missing XML: " + path); return; }
 
-Create XML files for each data type using these filenames (exact casing matters at runtime on Android/Linux):
+XmlDocument doc = new XmlDocument();
+doc.LoadXml(asset.text);
+```
 
-| File | `Resources.Load` path |
-|------|-----------------------|
+**Q: Why not use XmlLoader/IXmlLoadable?**
+A: Those helpers are not present in the current repository. Existing interactives all use direct loading.
+
+### Step 5: Build the Scene Flow
+
+Required flow:
+`Title -> Instructions -> Difficulty/Settings -> Game -> Feedback/Trophy`
+
+**Q: Why must first scene be Title?**
+A: `InteractiveController` derives and loads the first scene from the scenes bundle and expects this game-entry scene behavior.
+
+### Step 6: Prepare XML Files
+
+Standard EnglishTek layout:
+
+| File | Load path |
+|------|-----------|
 | `Instruction.xml` | `XML/###/Instruction` |
 | `Feedback.xml` | `XML/###/Feedback` |
 | `Itembank_Practice.xml` | `XML/###/Itembank_Practice` |
 | `Itembank_Workout.xml` | `XML/###/Itembank_Workout` |
 | `Itembank_Quiz.xml` | `XML/###/Itembank_Quiz` |
 
-### Step 5: Create the InteractiveManifest (Individual Project)
+Legacy FilipinoTek exceptions:
+- ID101 uses `XML/101/*` with `Dialougebanks` naming
+- ID102 uses `102/*` (no `XML/` prefix)
 
-In the game's Unity project:
-1. `Assets → Create → Interactive → Bundle Manifest`
-2. Set `gameId` to the numeric ID (e.g. `106`)
-3. Set `firstSceneName = "Title"`
-4. Add each XML TextAsset as a `NamedXML` entry — these are used by the container editor import tool, **not** at runtime
-5. Add all scene assets to `allScenes`
-6. Add any required prefabs to `prefabsToInclude`
+**Q: Why is exact casing important?**
+A: Case-sensitive paths break at runtime on Android/Linux.
 
-### Step 6: Build AssetBundles
+### Step 7: Create/Configure `InteractiveManifest`
 
-Assign bundle name `englishtek.grade1.id###` to:
-- All scene assets → `.scenes` bundle
-- Manifest + prefabs → `.assets` bundle
-- **Do NOT tag XML files** — they go to Resources, not the bundle
+Set:
+- `gameId` numeric value
+- `firstSceneName = "Title"`
+- `allScenes` list
+- `prefabsToInclude` if needed
+- `xmlConfigs` entries if using the packer import button
 
-Use `Tools → Interactive Game Packer` → **Tag Assets** → **Build Asset Bundle**.
-Build separately for each target platform (Windows / WebGL / Android).
+**Q: Why manifest if XML is not bundled?**
+A: It still tracks scenes/prefabs and supports XML import workflows where the editor tool is available.
 
-### Step 7: Import XML to Container
+### Step 8: Build Bundles
 
-Back in the **container project**:
-1. Open `Tools → Interactive Game Packer`
-2. Assign the container's matching `InteractiveManifest`
-3. Click **Import XML to Container (Resources)**
-4. Files are copied to `Assets/Resources/XML/{gameId}/{key}.xml`
+Bundle naming rule:
+```text
+{bundlePrefix}.{grade}.{id-lowercase}.assets
+{bundlePrefix}.{grade}.{id-lowercase}.scenes
+```
 
-> This only needs to be done once per game, or when XML content changes.
+Assign:
+- scenes -> `.scenes`
+- manifest + prefabs -> `.assets`
+- never XML files
 
-### Step 8: Deploy to Server
+Build per target platform (Windows/WebGL/Android).
 
-1. Create: `ServerData/Interactive/Grade 1/grammar/unit1/ID###/`
-2. Upload:
-   - `englishtek.grade1.id###.assets`
-   - `englishtek.grade1.id###.scenes`
-   - `thumb.png` (thumbnail, shown in catalog list)
-   - `home.png` (full-bleed background, shown in carousel)
+**Q: Why per-platform builds?**
+A: AssetBundles are platform-specific binaries.
 
-### Step 9: Add Catalog Entry
+### Step 9: Import/Copy XML into Container
 
-Add to `ServerData/Interactive/Grade 1/catalog.json`:
+If `InteractivePacker` is available in Unity, use import.
+If not, manually copy XML files to the container `Assets/Resources/...` location.
+
+**Q: Why copy XML into container?**
+A: Runtime loading uses `Resources.Load` from container assets, not from bundle payload.
+
+### Step 10: Deploy to Server
+
+Upload to folder (example):
+`ServerData/Interactive/Grade 1/grammar/unit1/ID###/`
+
+Upload:
+- `{bundleBase}.assets`
+- `{bundleBase}.scenes`
+- `thumb.png`
+- `home.png`
+
+**Q: Why include thumb/home?**
+A: Catalog UI and carousel background use them for entry visuals.
+
+### Step 11: Add/Update `catalog.json`
+
+Example entry:
 ```json
 {
   "id": "ID###",
@@ -1081,37 +1168,35 @@ Add to `ServerData/Interactive/Grade 1/catalog.json`:
 }
 ```
 
-### Step 10: Add Cache Clear Support (Optional)
+**Q: Why include `bundleVersion`?**
+A: `InteractiveController` uses it in the cache key so users fetch updated bundles after releases.
 
-Add a menu item to `Assets/Core/Editor/InteractiveCacheClearer.cs`:
-```csharp
-[MenuItem("TekContainer/Clear Interactive Cache/ID###")]
-private static void ClearID###() => ClearById("ID###");
-```
+### Step 12: Validate End-to-End
 
-### Step 11: Validate
+Check:
+- Catalog entry appears
+- Tap entry loads Title
+- XML content shows in instructions/game
+- Gameplay reaches feedback/trophy
+- Score submission works
+- Back overlay returns to container
+- No Console errors
 
-Run the container and check:
+**Q: Why clear cache during testing?**
+A: Cached bundles/catalog/images can mask server-side changes.
 
-- [ ] New game appears in catalog menu under the correct category and unit
-- [ ] Pressing the entry loads the Title scene
-- [ ] Instructions text loads correctly from XML
-- [ ] All three difficulty levels load item banks correctly
-- [ ] Game plays through all 10 items
-- [ ] Feedback screen shows and score is correct
-- [ ] Score submits to LMS (check network tab)
-- [ ] Back button returns to container
-- [ ] No errors in Unity Console
+Use: `TekContainer -> Clear Interactive Cache -> All`.
 
-### Troubleshooting Checklist
+### Troubleshooting Quick Q&A
 
-| Check | How |
-|-------|-----|
-| XML returns null at runtime? | Verify file at `Assets/Resources/XML/###/{filename}.xml`; re-run Import XML |
-| Bundle URL reachable? | Open `http://localhost:8080/Interactive/...` in browser |
-| Bundle for correct platform? | Rebuild for target (Windows ≠ Android ≠ WebGL) |
-| Manifest firstSceneName matches? | Should be exactly `"Title"` |
-| XML keys match code? | Compare `GetXMLText("key")` calls to manifest NamedXML keys |
-| Script assembly correct? | ID### asmdef must match what was used when building the bundle |
-| Stale cache? | Clear via **TekContainer → Clear Interactive Cache** or bump `bundleVersion` |
-| link.xml updated? | `<assembly fullname="ID###" preserve="all"/>` |
+**Q: Scene loads white/empty. Why?**
+A: Usually wrong-platform bundle or stale cache.
+
+**Q: Script missing in loaded scene. Why?**
+A: Assembly mismatch or missing `link.xml` preserve entry.
+
+**Q: XML is null. Why?**
+A: Wrong `Resources.Load` path, filename case mismatch, or file not copied into container.
+
+**Q: Bundles 404 on server. Why?**
+A: Folder/category/unit/ID path or bundle base name does not match catalog/controller conventions.
