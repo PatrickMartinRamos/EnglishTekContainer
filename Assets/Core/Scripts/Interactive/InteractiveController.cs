@@ -22,8 +22,8 @@ namespace Tek.Core
 
         [SerializeField] private string serverRoot = "http://localhost:8080/Interactive/";
         [SerializeField] private string grade = "grade1";
-        [SerializeField] private string defaultCategory = string.Empty;
-        [SerializeField] private string defaultUnit = string.Empty;
+        private string defaultCategory = string.Empty;
+        private string defaultUnit = string.Empty;
         // Optional prefix for auto-generated bundle file names: {bundlePrefix}.{grade}.{id}
         // Leave empty to use {grade}.{id} format.
         [SerializeField] private string bundlePrefix = string.Empty;
