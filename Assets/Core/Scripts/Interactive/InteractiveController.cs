@@ -20,7 +20,7 @@ namespace Tek.Core
             InvalidData
         }
 
-        [SerializeField] private string serverRoot = "http://localhost:8080/Interactive/";
+        [SerializeField] private string serverRoot = "https://et-server-data.vercel.app/Interactive/"; 
         [SerializeField] private string grade = "grade1";
         private string defaultCategory = string.Empty;
         private string defaultUnit = string.Empty;
@@ -43,7 +43,7 @@ namespace Tek.Core
         private struct DownloadTarget
         {
             public string requestedId;
-            public string folderName;
+            public string folderName; 
             public string bundleFileNameBase;
             public string cacheKey;
         }
