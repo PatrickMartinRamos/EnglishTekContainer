@@ -3497,8 +3497,8 @@ MonoBehaviour:
   controller: {fileID: 1954797053}
   catalogMenu: {fileID: 1954797055}
   loadingPanel: {fileID: 793405539}
-  loadingLabel: {fileID: 1647418874}
-  notificationBackground: {fileID: 1228296017}
+  loadingLabel: {fileID: 0}
+  notificationBackground: {fileID: 0}
   msgDownloading: Downloading Files...
   msgChecking: Checking Files...
   msgNoInternet: Connect to the Internet and Restart to continue.
@@ -4265,7 +4265,7 @@ GameObject:
   - component: {fileID: 1230148296}
   - component: {fileID: 1230148297}
   m_Layer: 5
-  m_Name: Debug
+  m_Name: DebugMenu
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -4311,6 +4311,7 @@ MonoBehaviour:
   - englishtek
   - filipinotek
   - mathtek
+  - sciencetek
   - aptek
   gradeOptions:
   - Grade 1
@@ -5002,7 +5003,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   carousel: {fileID: 1017575998}
-  backgroundImage: {fileID: 63367966}
+  backgroundImage: {fileID: 0}
   controller: {fileID: 1954797053}
   entryGroup: {fileID: 1812227770}
 --- !u!1 &1468107174
@@ -6029,7 +6030,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 190.1, y: -91.6}
+  m_AnchoredPosition: {x: 190.09998, y: -91.600006}
   m_SizeDelta: {x: 380.2, y: 183.3}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1877292758
@@ -6046,7 +6047,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
   m_Color: {r: 0, g: 0, b: 0, a: 0.3019608}
-  m_RaycastTarget: 1
+  m_RaycastTarget: 0
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []

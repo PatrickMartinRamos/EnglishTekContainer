@@ -30,7 +30,7 @@ namespace Tek.Core
         {
             if (!string.IsNullOrWhiteSpace(newGrade))
             {
-                grade = newGrade.ToLowerInvariant();
+                grade = newGrade;
                 Debug.Log("[InteractiveController] Grade set to: " + grade);
             }
         }

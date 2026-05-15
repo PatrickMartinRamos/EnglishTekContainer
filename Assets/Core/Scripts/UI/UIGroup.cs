@@ -120,6 +120,18 @@ namespace Tek.Core
                 return;
             }
 
+            // Coroutines cannot run on inactive/disabled behaviours.
+            // In that state, apply hidden state immediately and finish.
+            if (!isActiveAndEnabled || !gameObject.activeInHierarchy)
+            {
+                StopActive();
+                IsVisible = false;
+                SnapHidden();
+                gameObject.SetActive(false);
+                onComplete?.Invoke();
+                return;
+            }
+
             StopActive();
             IsVisible = false;
             activeHideAnimation = animationOut;
@@ -134,6 +146,18 @@ namespace Tek.Core
         {
             if (overrideAnimation == UIGroupAnimation.None)
             {
+                onComplete?.Invoke();
+                return;
+            }
+
+            // Coroutines cannot run on inactive/disabled behaviours.
+            // In that state, apply hidden state immediately and finish.
+            if (!isActiveAndEnabled || !gameObject.activeInHierarchy)
+            {
+                StopActive();
+                IsVisible = false;
+                SnapHidden();
+                gameObject.SetActive(false);
                 onComplete?.Invoke();
                 return;
             }
