@@ -194,7 +194,10 @@ namespace Tek.Core
             canvas.sortingOrder = 9999;
 
             CanvasScaler scaler = canvasRoot.AddComponent<CanvasScaler>();
-            scaler.uiScaleMode = CanvasScaler.ScaleMode.ConstantPixelSize;
+            scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+            scaler.referenceResolution = new Vector2(1920, 1080);
+            scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
+            scaler.matchWidthOrHeight = 0.5f;
 
             canvasRoot.AddComponent<GraphicRaycaster>();
 

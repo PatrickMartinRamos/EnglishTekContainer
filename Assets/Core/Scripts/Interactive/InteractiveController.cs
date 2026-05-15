@@ -21,7 +21,19 @@ namespace Tek.Core
         }
 
         [SerializeField] private string serverRoot = "http://localhost:8080/Interactive/";
-        [SerializeField] private string grade = "grade1";
+        [SerializeField] private string grade = "Grade 1";
+
+        /// <summary>
+        /// Sets the grade for catalog filtering (e.g., "grade1", "grade2", "grade3").
+        /// </summary>
+        public void SetGrade(string newGrade)
+        {
+            if (!string.IsNullOrWhiteSpace(newGrade))
+            {
+                grade = newGrade.ToLowerInvariant();
+                Debug.Log("[InteractiveController] Grade set to: " + grade);
+            }
+        }
         private string defaultCategory = string.Empty;
         private string defaultUnit = string.Empty;
         // Optional prefix for auto-generated bundle file names: {bundlePrefix}.{grade}.{id}
