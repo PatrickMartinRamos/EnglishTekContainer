@@ -64,10 +64,14 @@ namespace Tek.Core
 
         private float shownAt;
         private bool isFirstLaunchOffline;   // stuck state — do not hide
+        private bool showStartupStatusOverlay; // true only when no catalog cache exists yet
         private bool catalogDone;            // catalog succeeded or loaded from cache
         private bool imagesReady;            // ImagesReady fired (may arrive before catalogDone)
+        private bool interactiveLoadInProgress; // true while a game is downloading/loading
         private Coroutine notificationRoutine;
-        private string messageBeforeNotification;
+        // Tracked at instance level so an interrupted notification can clean up its sprite swap.
+        private Sprite notificationOriginalSprite;
+        private bool notificationImageSwapped;
 
         // ── Lifecycle ─────────────────────────────────────────────────────────
 
@@ -85,6 +89,8 @@ namespace Tek.Core
             controller.CatalogUpdated        += OnCatalogUpdated;
             controller.CatalogLoadFailed     += OnCatalogLoadFailed;
             controller.GameLoadOfflineBlocked += OnGameLoadOfflineBlocked;
+            controller.GameLoadStarted       += OnGameLoadStarted;
+            controller.GameLoadFinished      += OnGameLoadFinished;
             if (catalogMenu != null) catalogMenu.ImagesReady += OnImagesReady;
         }
 
@@ -94,6 +100,8 @@ namespace Tek.Core
             controller.CatalogUpdated        -= OnCatalogUpdated;
             controller.CatalogLoadFailed     -= OnCatalogLoadFailed;
             controller.GameLoadOfflineBlocked -= OnGameLoadOfflineBlocked;
+            controller.GameLoadStarted       -= OnGameLoadStarted;
+            controller.GameLoadFinished      -= OnGameLoadFinished;
             if (catalogMenu != null) catalogMenu.ImagesReady -= OnImagesReady;
         }
 
@@ -104,11 +112,23 @@ namespace Tek.Core
             isFirstLaunchOffline = false;
 
             bool hasCacheOnDisk = controller != null && controller.IsCatalogCached();
-            SetLabel(hasCacheOnDisk ? msgChecking : msgDownloading);
+            showStartupStatusOverlay = !hasCacheOnDisk;
 
-            if (loadingPanel != null)
+            if (showStartupStatusOverlay)
             {
-                loadingPanel.Show();
+                SetLabel(msgDownloading);
+                if (loadingPanel != null)
+                {
+                    loadingPanel.Show();
+                }
+            }
+            else
+            {
+                catalogDone = true;
+                if (loadingPanel != null)
+                {
+                    loadingPanel.HideImmediate();
+                }
             }
 
             // If the controller loaded the catalog before we could subscribe to its event
@@ -116,7 +136,7 @@ namespace Tek.Core
             if (controller != null && controller.AvailableInteractives.Count > 0)
             {
                 catalogDone = true;
-                if (catalogMenu != null && !imagesReady)
+                if (showStartupStatusOverlay && catalogMenu != null && !imagesReady)
                     SetLabel("Preparing Images...");
             }
         }
@@ -127,6 +147,14 @@ namespace Tek.Core
         {
             isFirstLaunchOffline = false;
             catalogDone = true;
+
+            // Returning launches should not show startup messages like
+            // "Checking Files..." / "Preparing Images...".
+            if (!showStartupStatusOverlay)
+            {
+                return;
+            }
+
             // If catalogMenu is assigned, wait for ImagesReady before hiding.
             // If ImagesReady already fired before us (race), hide immediately.
             if (catalogMenu == null || imagesReady)
@@ -142,6 +170,12 @@ namespace Tek.Core
         private void OnImagesReady()
         {
             imagesReady = true;
+
+            if (!showStartupStatusOverlay)
+            {
+                return;
+            }
+
             // ImagesReady only fires once the catalog has loaded and all downloads are done.
             // It is always safe to hide here — no need to wait for catalogDone.
             if (isFirstLaunchOffline) return;
@@ -150,6 +184,12 @@ namespace Tek.Core
 
         private void OnCatalogLoadFailed(string error)
         {
+            if (!showStartupStatusOverlay)
+            {
+                catalogDone = true;
+                return;
+            }
+
             // CatalogLoadFailed only fires when there is no local cache AND the network
             // request failed. That is the true "no internet, first launch" state.
             bool hasCacheOnDisk = controller != null && controller.IsCatalogCached();
@@ -172,6 +212,28 @@ namespace Tek.Core
             ShowNotification(message, entry);
         }
 
+        private void OnGameLoadStarted(string message, InteractiveCatalogEntry entry)
+        {
+            interactiveLoadInProgress = true;
+            SetLabel(message);
+
+            if (loadingPanel != null)
+            {
+                loadingPanel.ShowImmediate();
+            }
+        }
+
+        private void OnGameLoadFinished()
+        {
+            // Only fired on failure — success transitions the scene, destroying this overlay.
+            interactiveLoadInProgress = false;
+
+            if (loadingPanel != null)
+            {
+                loadingPanel.Hide();
+            }
+        }
+
         // ── Notification (brief overlay message) ──────────────────────────────
 
         private void ShowNotification(string message, InteractiveCatalogEntry entry = null)
@@ -179,9 +241,29 @@ namespace Tek.Core
             if (notificationRoutine != null)
             {
                 StopCoroutine(notificationRoutine);
+                notificationRoutine = null;
+                RestoreNotificationSprite();
             }
 
             notificationRoutine = StartCoroutine(NotificationRoutine(message, entry));
+        }
+
+        private void RestoreNotificationSprite()
+        {
+            if (!notificationImageSwapped || notificationBackground == null)
+            {
+                notificationImageSwapped = false;
+                return;
+            }
+
+            if (notificationBackground.sprite != null && notificationBackground.sprite != notificationOriginalSprite)
+            {
+                Destroy(notificationBackground.sprite.texture);
+                Destroy(notificationBackground.sprite);
+            }
+            notificationBackground.sprite = notificationOriginalSprite;
+            notificationOriginalSprite = null;
+            notificationImageSwapped = false;
         }
 
         private IEnumerator NotificationRoutine(string message, InteractiveCatalogEntry entry)
@@ -189,8 +271,6 @@ namespace Tek.Core
             SetLabel(message);
 
             // Try to show the cached home image on the notification background.
-            Sprite originalSprite = null;
-            bool swappedImage = false;
             if (notificationBackground != null && entry != null)
             {
                 string homeUrl = null;
@@ -211,10 +291,10 @@ namespace Tek.Core
                             Texture2D tex = new Texture2D(2, 2);
                             if (tex.LoadImage(bytes))
                             {
-                                originalSprite = notificationBackground.sprite;
+                                notificationOriginalSprite = notificationBackground.sprite;
                                 notificationBackground.sprite = Sprite.Create(tex, new Rect(0, 0, tex.width, tex.height), new Vector2(0.5f, 0.5f));
                                 notificationBackground.color = Color.white;
-                                swappedImage = true;
+                                notificationImageSwapped = true;
                             }
                             else
                             {
@@ -234,16 +314,7 @@ namespace Tek.Core
             {
                 yield return new WaitForSeconds(notificationDismissSeconds);
 
-                // Restore original background before hiding.
-                if (swappedImage && notificationBackground != null)
-                {
-                    if (notificationBackground.sprite != null && notificationBackground.sprite != originalSprite)
-                    {
-                        Destroy(notificationBackground.sprite.texture);
-                        Destroy(notificationBackground.sprite);
-                    }
-                    notificationBackground.sprite = originalSprite;
-                }
+                RestoreNotificationSprite();
 
                 if (catalogDone && !isFirstLaunchOffline && loadingPanel != null)
                 {

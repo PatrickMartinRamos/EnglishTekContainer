@@ -10,10 +10,32 @@ namespace Tek.Core
 {
     public class InteractiveController : MonoBehaviour
     {
+        private const string CacheVersionPlayerPrefsKey = "Tek.Core.CacheVersion";
+
+        private enum BundleLoadFailureKind
+        {
+            None,
+            Network,
+            Empty,
+            InvalidData
+        }
+
         [SerializeField] private string serverRoot = "http://localhost:8080/Interactive/";
-        [SerializeField] private string grade = "grade1";
-        [SerializeField] private string defaultCategory = string.Empty;
-        [SerializeField] private string defaultUnit = string.Empty;
+        [SerializeField] private string grade = "Grade 1";
+
+        /// <summary>
+        /// Sets the grade for catalog filtering (e.g., "grade1", "grade2", "grade3").
+        /// </summary>
+        public void SetGrade(string newGrade)
+        {
+            if (!string.IsNullOrWhiteSpace(newGrade))
+            {
+                grade = newGrade;
+                Debug.Log("[InteractiveController] Grade set to: " + grade);
+            }
+        }
+        private string defaultCategory = string.Empty;
+        private string defaultUnit = string.Empty;
         // Optional prefix for auto-generated bundle file names: {bundlePrefix}.{grade}.{id}
         // Leave empty to use {grade}.{id} format.
         [SerializeField] private string bundlePrefix = string.Empty;
@@ -21,9 +43,10 @@ namespace Tek.Core
         [SerializeField] private ContainerReturnOverlay overlayPrefab = null;
         [SerializeField] private OverlayButtonCorner overlayButtonCorner = OverlayButtonCorner.TopLeft;
         [SerializeField] private Vector2 overlayButtonPadding = new Vector2(10f, 10f);
-        private string catalogFileName = "catalog.json";
+        private const string catalogFileName = "catalog.json";
         private readonly List<InteractiveCatalogEntry> availableInteractives = new List<InteractiveCatalogEntry>();
         private Coroutine catalogLoadRoutine;
+        private bool gameLoadInProgress;
 
         public IReadOnlyList<InteractiveCatalogEntry> AvailableInteractives => availableInteractives;
         public event Action<IReadOnlyList<InteractiveCatalogEntry>> CatalogUpdated;
@@ -39,10 +62,31 @@ namespace Tek.Core
 
         private void Start()
         {
+            EnsureCacheVersionCurrent();
+
             if (refreshCatalogOnStart)
             {
                 RefreshCatalog();
             }
+        }
+
+        private void EnsureCacheVersionCurrent()
+        {
+            string currentVersion = string.IsNullOrWhiteSpace(Application.version) ? "0" : Application.version.Trim();
+            string cachedVersion = PlayerPrefs.GetString(CacheVersionPlayerPrefsKey, string.Empty);
+
+            if (string.Equals(cachedVersion, currentVersion, StringComparison.Ordinal))
+            {
+                return;
+            }
+
+            TryDeleteDirectory(Path.Combine(Application.persistentDataPath, "CatalogCache"));
+            TryDeleteDirectory(Path.Combine(Application.persistentDataPath, "InteractiveCache"));
+            TryDeleteDirectory(Path.Combine(Application.persistentDataPath, "ThumbnailCache"));
+
+            PlayerPrefs.SetString(CacheVersionPlayerPrefsKey, currentVersion);
+            PlayerPrefs.Save();
+            Debug.Log("[Cache] Reset persistent cache for app version " + currentVersion + ".");
         }
 
         public void RefreshCatalog()
@@ -60,22 +104,25 @@ namespace Tek.Core
         /// Parameters: message string, the catalog entry (may be null if not found).
         /// </summary>
         public event Action<string, InteractiveCatalogEntry> GameLoadOfflineBlocked;
+        public event Action<string, InteractiveCatalogEntry> GameLoadStarted;
+        public event Action GameLoadFinished;
 
         public void RequestGameLoad(string gameId)
         {
-            bool offline = Application.internetReachability == NetworkReachability.NotReachable;
-            if (offline && !IsInteractiveCached(gameId))
+            if (gameLoadInProgress)
             {
-                InteractiveCatalogEntry entry = FindCatalogEntry(gameId);
-                string title = entry != null && !string.IsNullOrWhiteSpace(entry.title) ? entry.title : gameId;
-                string msg = "Connect to the internet to download \"" + title + "\".";
-                Debug.LogWarning("[InteractiveController] " + msg);
-                GameLoadOfflineBlocked?.Invoke(msg, entry);
+                Debug.LogWarning("[InteractiveController] Ignoring RequestGameLoad — a load is already in progress.");
                 return;
             }
 
             InteractiveCatalogEntry matchedEntry = FindCatalogEntry(gameId);
-            StartCoroutine(DownloadAndStartRoutine(BuildDownloadTarget(gameId, matchedEntry)));
+            bool isCached = IsInteractiveCached(gameId);
+            string title = matchedEntry != null && !string.IsNullOrWhiteSpace(matchedEntry.title) ? matchedEntry.title : gameId;
+            string loadMsg = isCached ? ("Loading " + title + "...") : ("Downloading " + title + "...");
+            gameLoadInProgress = true;
+            GameLoadStarted?.Invoke(loadMsg, matchedEntry);
+
+            StartCoroutine(DownloadAndStartRoutine(BuildDownloadTarget(gameId, matchedEntry), matchedEntry, isCached));
         }
 
         /// <summary>
@@ -149,37 +196,39 @@ namespace Tek.Core
         private IEnumerator LoadCatalogRoutine()
         {
             string catalogUrl = BuildCatalogUrl();
-            UnityWebRequest request = UnityWebRequest.Get(catalogUrl);
-            yield return request.SendWebRequest();
-
-            catalogLoadRoutine = null;
-
             string json = null;
 
-            if (request.isNetworkError || request.isHttpError)
+            using (UnityWebRequest request = UnityWebRequest.Get(catalogUrl))
             {
-                Debug.LogWarning("[Catalog] Network unavailable (" + request.error + "). Trying local cache...");
-                json = TryLoadCatalogCache();
-                if (json == null)
+                yield return request.SendWebRequest();
+
+                catalogLoadRoutine = null;
+
+                if (request.isNetworkError || request.isHttpError)
                 {
-                    string message = "Catalog download failed and no local cache found. URL: " + catalogUrl;
-                    Debug.LogWarning(message);
-                    CatalogLoadFailed?.Invoke(message);
-                    yield break;
+                    Debug.LogWarning("[Catalog] Network unavailable (" + request.error + "). Trying local cache...");
+                    json = TryLoadCatalogCache();
+                    if (json == null)
+                    {
+                        string message = "Catalog download failed and no local cache found. URL: " + catalogUrl;
+                        Debug.LogWarning(message);
+                        CatalogLoadFailed?.Invoke(message);
+                        yield break;
+                    }
                 }
-            }
-            else
-            {
-                json = request.downloadHandler.text;
-                if (string.IsNullOrWhiteSpace(json))
+                else
                 {
-                    string message = "Catalog download returned empty JSON. URL: " + catalogUrl;
-                    Debug.LogWarning(message);
-                    CatalogLoadFailed?.Invoke(message);
-                    yield break;
+                    json = request.downloadHandler.text;
+                    if (string.IsNullOrWhiteSpace(json))
+                    {
+                        string message = "Catalog download returned empty JSON. URL: " + catalogUrl;
+                        Debug.LogWarning(message);
+                        CatalogLoadFailed?.Invoke(message);
+                        yield break;
+                    }
+                    SaveCatalogCache(json);
                 }
-                SaveCatalogCache(json);
-            }
+            } // request.Dispose()
 
             InteractiveCatalogDocument catalog = null;
             try
@@ -212,8 +261,17 @@ namespace Tek.Core
             CatalogUpdated?.Invoke(availableInteractives);
         }
 
-        private IEnumerator DownloadAndStartRoutine(DownloadTarget target)
+        private IEnumerator DownloadAndStartRoutine(DownloadTarget target, InteractiveCatalogEntry entry, bool alreadyCached)
         {
+            // Unload any stale bundles from a previous interactive that may not have been
+            // cleaned up (e.g. when the game returned to container via its own UI instead
+            // of the ContainerReturnOverlay back button). Stale bundles cause LoadFromMemoryAsync
+            // to return the wrong bundle when internal names collide, resulting in a white screen.
+            if (GameSession.CurrentAssetBundle != null || GameSession.CurrentSceneBundle != null)
+            {
+                GameSession.CleanUp();
+            }
+
             string gameId = target.requestedId;
             string folderPath = BuildFolderUrl(target.folderName);
             string fileNameBase = target.bundleFileNameBase;
@@ -226,17 +284,31 @@ namespace Tek.Core
 
             AssetBundle loadedAssetBundle = null;
             AssetBundle loadedSceneBundle = null;
+            BundleLoadFailureKind assetFailureKind = BundleLoadFailureKind.None;
+            BundleLoadFailureKind sceneFailureKind = BundleLoadFailureKind.None;
 
-            yield return StartCoroutine(LoadBundleWithLocalCacheRoutine(assetBundleUrl, assetCachePath, "assets", bundle => loadedAssetBundle = bundle));
+            yield return StartCoroutine(LoadBundleWithLocalCacheRoutine(assetBundleUrl, assetCachePath, "assets", (bundle, failureKind) =>
+            {
+                loadedAssetBundle = bundle;
+                assetFailureKind = failureKind;
+            }));
             if (loadedAssetBundle == null)
             {
+                HandleBundleLoadFailure(gameId, entry, assetFailureKind, "assets", assetBundleUrl);
+                NotifyGameLoadFinished();
                 Debug.LogError("Asset Error: Unable to load bundle from local cache or server: " + assetBundleUrl);
                 yield break;
             }
 
-            yield return StartCoroutine(LoadBundleWithLocalCacheRoutine(sceneBundleUrl, sceneCachePath, "scenes", bundle => loadedSceneBundle = bundle));
+            yield return StartCoroutine(LoadBundleWithLocalCacheRoutine(sceneBundleUrl, sceneCachePath, "scenes", (bundle, failureKind) =>
+            {
+                loadedSceneBundle = bundle;
+                sceneFailureKind = failureKind;
+            }));
             if (loadedSceneBundle == null)
             {
+                HandleBundleLoadFailure(gameId, entry, sceneFailureKind, "scenes", sceneBundleUrl);
+                NotifyGameLoadFinished();
                 Debug.LogError("Scene Error: Unable to load bundle from local cache or server: " + sceneBundleUrl);
                 loadedAssetBundle.Unload(true);
                 yield break;
@@ -245,6 +317,10 @@ namespace Tek.Core
             // Store in Session
             GameSession.CurrentAssetBundle = loadedAssetBundle;
             GameSession.CurrentSceneBundle = loadedSceneBundle;
+
+            // Keep bundle loading free from broad asset deserialization to avoid
+            // missing-script warnings from legacy/mismatched assets.
+            // TMP shader fixes are handled after scene load by BundleTMPShaderFixer.
 
             // Derive first scene from the scene bundle.
             // Direct manifest deserialization from external bundles is skipped to avoid
@@ -270,12 +346,38 @@ namespace Tek.Core
                 GameSession.CurrentManifest = manifest;
                 GameSession.ContainerSceneName = SceneManager.GetActiveScene().name;
                 ContainerReturnOverlay.EnsureExists(overlayPrefab, overlayButtonCorner, overlayButtonPadding);
+                BundleTMPShaderFixer.EnsureExists();
+                AspectRatioEnforcer enforcer = FindObjectOfType<AspectRatioEnforcer>();
+                if (enforcer != null)
+                {
+                    enforcer.EnableEnforcement();
+                }
                 SceneManager.LoadScene(manifest.firstSceneName, LoadSceneMode.Single);
             }
             else
             {
+                NotifyGameLoadFinished();
                 Debug.LogError("Could not find any InteractiveManifest asset in the bundle Available assets: " + string.Join(", ", assetNames));
             }
+        }
+
+        private void HandleBundleLoadFailure(string gameId, InteractiveCatalogEntry entry, BundleLoadFailureKind failureKind, string bundleLabel, string remoteUrl)
+        {
+            if (failureKind != BundleLoadFailureKind.Network || IsInteractiveCached(gameId))
+            {
+                return;
+            }
+
+            string title = entry != null && !string.IsNullOrWhiteSpace(entry.title) ? entry.title : gameId;
+            string msg = "Connect to the internet to download \"" + title + "\".";
+            Debug.LogWarning("[InteractiveController] " + msg + " Bundle: " + bundleLabel + " URL: " + remoteUrl);
+            GameLoadOfflineBlocked?.Invoke(msg, entry);
+        }
+
+        private void NotifyGameLoadFinished()
+        {
+            gameLoadInProgress = false;
+            GameLoadFinished?.Invoke();
         }
 
         private string GetCacheDirectory(string gameId)
@@ -400,7 +502,7 @@ namespace Tek.Core
             };
         }
 
-        private IEnumerator LoadBundleWithLocalCacheRoutine(string remoteUrl, string localPath, string bundleLabel, Action<AssetBundle> onLoaded)
+        private IEnumerator LoadBundleWithLocalCacheRoutine(string remoteUrl, string localPath, string bundleLabel, Action<AssetBundle, BundleLoadFailureKind> onLoaded)
         {
             AssetBundle loadedBundle = null;
 
@@ -424,7 +526,7 @@ namespace Tek.Core
                     if (loadedBundle != null)
                     {
                         Debug.Log("Loaded " + bundleLabel + " bundle from local cache: " + localPath);
-                        onLoaded(loadedBundle);
+                        onLoaded(loadedBundle, BundleLoadFailureKind.None);
                         yield break;
                     }
 
@@ -434,27 +536,26 @@ namespace Tek.Core
             }
 
             Debug.Log("[Download] Fetching " + bundleLabel + " from: " + remoteUrl);
-            
-            UnityWebRequest req = UnityWebRequest.Get(remoteUrl);
-            req.SendWebRequest();
-            while (!req.isDone)
-            {
-                yield return null;
-            }
-            Debug.Log("[Download] " + bundleLabel + " progress: 100%");
 
-            if (req.isNetworkError || req.isHttpError)
+            byte[] downloadedBytes = null;
+            using (UnityWebRequest req = UnityWebRequest.Get(remoteUrl))
             {
-                Debug.LogError("Download failed for " + bundleLabel + " bundle: " + req.error + " | URL: " + remoteUrl);
-                onLoaded(null);
-                yield break;
-            }
+                yield return req.SendWebRequest();
 
-            byte[] downloadedBytes = req.downloadHandler.data;
+                if (req.isNetworkError || req.isHttpError)
+                {
+                    Debug.LogError("Download failed for " + bundleLabel + " bundle: " + req.error + " | URL: " + remoteUrl);
+                    onLoaded(null, BundleLoadFailureKind.Network);
+                    yield break;
+                }
+
+                downloadedBytes = req.downloadHandler.data;
+            } // req.Dispose()
+
             if (downloadedBytes == null || downloadedBytes.Length == 0)
             {
                 Debug.LogError("Downloaded " + bundleLabel + " bundle is empty. URL: " + remoteUrl);
-                onLoaded(null);
+                onLoaded(null, BundleLoadFailureKind.Empty);
                 yield break;
             }
 
@@ -465,7 +566,7 @@ namespace Tek.Core
             if (loadedBundle == null)
             {
                 Debug.LogError("[Download] Downloaded data is NOT a valid " + bundleLabel + " AssetBundle. URL: " + remoteUrl + " | This usually means the bundle was built for a different platform (e.g. WebGL/Standalone instead of Android).");
-                onLoaded(null);
+                onLoaded(null, BundleLoadFailureKind.InvalidData);
                 yield break;
             }
             Debug.Log("[Download] " + bundleLabel + " AssetBundle loaded successfully.");
@@ -485,7 +586,7 @@ namespace Tek.Core
                 Debug.LogWarning("Loaded " + bundleLabel + " bundle but failed to cache locally: " + writeEx.Message);
             }
 
-            onLoaded(loadedBundle);
+            onLoaded(loadedBundle, BundleLoadFailureKind.None);
         }
 
         private void TryDeleteFile(string filePath)
@@ -500,6 +601,21 @@ namespace Tek.Core
             catch (Exception deleteEx)
             {
                 Debug.LogWarning("Failed to delete invalid cache file: " + filePath + " | " + deleteEx.Message);
+            }
+        }
+
+        private void TryDeleteDirectory(string directoryPath)
+        {
+            try
+            {
+                if (Directory.Exists(directoryPath))
+                {
+                    Directory.Delete(directoryPath, true);
+                }
+            }
+            catch (Exception deleteEx)
+            {
+                Debug.LogWarning("Failed to delete cache directory: " + directoryPath + " | " + deleteEx.Message);
             }
         }
 

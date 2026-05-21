@@ -94,24 +94,35 @@ namespace Tek.Core
                 visibilityTarget = canvasRoot;
             }
 
-            // Start hidden; Update will show it when the active scene is Title.
+            // Start hidden; Update will show it while an interactive is active.
             SetVisible(false);
             lastVisible = false;
         }
 
+        private void OnDestroy()
+        {
+            if (instance == this)
+            {
+                instance = null;
+            }
+        }
+
         private void Update()
         {
-            bool isTitle = string.Equals(
-                SceneManager.GetActiveScene().name, "Title",
-                System.StringComparison.OrdinalIgnoreCase);
+            Scene activeScene = SceneManager.GetActiveScene();
+            string containerScene = GameSession.ContainerSceneName;
+            bool hasInteractiveSession = GameSession.CurrentManifest != null;
+            bool inContainerScene = !string.IsNullOrEmpty(containerScene)
+                && string.Equals(activeScene.name, containerScene, System.StringComparison.OrdinalIgnoreCase);
+            bool shouldShow = hasInteractiveSession && !inContainerScene;
 
-            if (isTitle == lastVisible)
+            if (shouldShow == lastVisible)
             {
                 return;
             }
 
-            lastVisible = isTitle;
-            SetVisible(isTitle);
+            lastVisible = shouldShow;
+            SetVisible(shouldShow);
         }
 
         private void SetVisible(bool visible)
@@ -127,6 +138,12 @@ namespace Tek.Core
             string containerScene = GameSession.ContainerSceneName;
             SetVisible(false);
             GameSession.CleanUp();
+
+            AspectRatioEnforcer enforcer = Object.FindObjectOfType<AspectRatioEnforcer>();
+            if (enforcer != null)
+            {
+                enforcer.DisableEnforcement();
+            }
 
             if (!string.IsNullOrEmpty(containerScene))
             {
@@ -177,7 +194,10 @@ namespace Tek.Core
             canvas.sortingOrder = 9999;
 
             CanvasScaler scaler = canvasRoot.AddComponent<CanvasScaler>();
-            scaler.uiScaleMode = CanvasScaler.ScaleMode.ConstantPixelSize;
+            scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+            scaler.referenceResolution = new Vector2(1920, 1080);
+            scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
+            scaler.matchWidthOrHeight = 0.5f;
 
             canvasRoot.AddComponent<GraphicRaycaster>();
 

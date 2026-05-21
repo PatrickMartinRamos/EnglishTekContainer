@@ -9,7 +9,7 @@ namespace Tek.Core
     public partial class InteractiveCatalogMenu
     {
         // ──────────────────────────────────────────────────────────────────────────
-        // Button Creation
+        // Button Creation 
         // ──────────────────────────────────────────────────────────────────────────
 
         private void CreateCategoryButtons(IReadOnlyList<string> categories)

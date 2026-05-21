@@ -1,0 +1,5 @@
+<Feedback>
+  <Perfect>You hit all the correct cans. Great!</Perfect>
+  <Average>You hit most of the correct answers. Good!</Average>
+  <Fail>You need to hit more cans. Try again.</Fail>
+</Feedback>

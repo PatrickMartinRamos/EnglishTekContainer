@@ -19,6 +19,13 @@ namespace Tek.Core
         [Tooltip("Container holding entry / interactive buttons. Shown after a unit is picked.")]
         [SerializeField] private UIGroup entryGroup = null;
 
+        [Header("Back Button")]
+        [Tooltip("Main-menu back button group. Shown when lesson navigation (unit or entry) is visible.")]
+        [SerializeField] private UIGroup lessonBackButtonGroup = null;
+
+        [Tooltip("Optional fallback if your back button is not a UIGroup.")]
+        [SerializeField] private GameObject lessonBackButtonObject = null;
+
         // ------------------------------------------------------------------ overrides
 
         protected override void OnCategoryApplied()
@@ -27,12 +34,23 @@ namespace Tek.Core
             {
                 categoryGroup.Hide(() =>
                 {
-                    if (unitGroup != null) { unitGroup.Show(); }
+                    if (unitGroup != null)
+                    {
+                        unitGroup.Show(() => SyncLessonBackButtonVisibility());
+                    }
+                    else
+                    {
+                        SyncLessonBackButtonVisibility();
+                    }
                 });
             }
             else if (unitGroup != null)
             {
-                unitGroup.Show();
+                unitGroup.Show(() => SyncLessonBackButtonVisibility());
+            }
+            else
+            {
+                SyncLessonBackButtonVisibility();
             }
         }
 
@@ -43,12 +61,23 @@ namespace Tek.Core
                 SetUnitButtonsInteractable(false);
                 unitGroup.Hide(() =>
                 {
-                    if (entryGroup != null) { entryGroup.Show(); }
+                    if (entryGroup != null)
+                    {
+                        entryGroup.Show(() => SyncLessonBackButtonVisibility());
+                    }
+                    else
+                    {
+                        SyncLessonBackButtonVisibility();
+                    }
                 });
             }
             else if (entryGroup != null)
             {
-                entryGroup.Show();
+                entryGroup.Show(() => SyncLessonBackButtonVisibility());
+            }
+            else
+            {
+                SyncLessonBackButtonVisibility();
             }
         }
 
@@ -66,7 +95,14 @@ namespace Tek.Core
                 entryGroup.Hide(() =>
                 {
                     SetUnitButtonsInteractable(true);
-                    if (unitGroup != null) { unitGroup.Show(); }
+                    if (unitGroup != null)
+                    {
+                        unitGroup.Show(() => SyncLessonBackButtonVisibility());
+                    }
+                    else
+                    {
+                        SyncLessonBackButtonVisibility();
+                    }
                 });
                 return;
             }
@@ -75,9 +111,19 @@ namespace Tek.Core
             {
                 unitGroup.Hide(() =>
                 {
-                    if (categoryGroup != null) { categoryGroup.Show(); }
+                    if (categoryGroup != null)
+                    {
+                        categoryGroup.Show(() => SyncLessonBackButtonVisibility());
+                    }
+                    else
+                    {
+                        SyncLessonBackButtonVisibility();
+                    }
                 });
+                return;
             }
+
+            SyncLessonBackButtonVisibility();
         }
 
         /// <summary>
@@ -98,12 +144,46 @@ namespace Tek.Core
             {
                 unitGroup.HideWith(UIGroupAnimation.Fade, () =>
                 {
-                    if (categoryGroup != null) { categoryGroup.Show(); }
+                    if (categoryGroup != null)
+                    {
+                        categoryGroup.Show(() => SyncLessonBackButtonVisibility());
+                    }
+                    else
+                    {
+                        SyncLessonBackButtonVisibility();
+                    }
                 });
             }
             else if (categoryGroup != null)
             {
-                categoryGroup.Show();
+                categoryGroup.Show(() => SyncLessonBackButtonVisibility());
+            }
+            else
+            {
+                SyncLessonBackButtonVisibility();
+            }
+        }
+
+        private void SyncLessonBackButtonVisibility()
+        {
+            bool showBack = (unitGroup != null && unitGroup.IsVisible)
+                || (entryGroup != null && entryGroup.IsVisible);
+
+            if (lessonBackButtonGroup != null)
+            {
+                if (showBack)
+                {
+                    lessonBackButtonGroup.ShowImmediate();
+                }
+                else
+                {
+                    lessonBackButtonGroup.HideImmediate();
+                }
+            }
+
+            if (lessonBackButtonObject != null)
+            {
+                lessonBackButtonObject.SetActive(showBack);
             }
         }
     }
