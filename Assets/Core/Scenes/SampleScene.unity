@@ -5004,7 +5004,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   carousel: {fileID: 1017575998}
-  backgroundImage: {fileID: 0}
+  backgroundImage: {fileID: 63367966}
   controller: {fileID: 1954797053}
   entryGroup: {fileID: 1812227770}
 --- !u!1 &1468107174
@@ -6391,9 +6391,9 @@ MonoBehaviour:
   serverRoot: https://et-server-data.vercel.app/Interactive/
   useGoogleSheetCatalogs: 1
   webAppUrl: https://script.google.com/macros/s/AKfycbyTwL-5-F72fVD9lX63CqOESbTFvWKPn1Iu1AcFIC_7bKWH2rLACFmFLOHBb4edr6ln/exec
-  grade: Grade 2
-  currentTek: 2
-  bundlePrefix: 2
+  grade: 0
+  currentTek: 0
+  bundlePrefix: 0
   refreshCatalogOnStart: 1
   overlayPrefab: {fileID: 8140076130552236305, guid: 374d600c8dd5b3245bcdeed3e86961f1,
     type: 3}
