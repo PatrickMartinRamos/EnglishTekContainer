@@ -6388,7 +6388,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fc6d02a0d0963f049afab84487862160, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  serverRoot: https://et-server-data.vercel.app/Interactive/
+  serverRoot: https://www.demo-tekteach.com/assets/unity/Mobile/Interactive/
   useGoogleSheetCatalogs: 1
   webAppUrl: https://script.google.com/macros/s/AKfycbyTwL-5-F72fVD9lX63CqOESbTFvWKPn1Iu1AcFIC_7bKWH2rLACFmFLOHBb4edr6ln/exec
   grade: 0
