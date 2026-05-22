@@ -3497,8 +3497,8 @@ MonoBehaviour:
   controller: {fileID: 1954797053}
   catalogMenu: {fileID: 1954797055}
   loadingPanel: {fileID: 793405539}
-  loadingLabel: {fileID: 0}
-  notificationBackground: {fileID: 0}
+  loadingLabel: {fileID: 1647418874}
+  notificationBackground: {fileID: 1228296017}
   msgDownloading: Downloading Files...
   msgChecking: Checking Files...
   msgNoInternet: Connect to the Internet and Restart to continue.
@@ -4305,6 +4305,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 67f6eb5f63e49c645b28e6fd5bc07610, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  enableDebugMenu: 0
   tekDropdown: {fileID: 391028404}
   gradeDropdown: {fileID: 562066002}
   tekOptions:
@@ -6367,6 +6368,7 @@ GameObject:
   - component: {fileID: 1954797054}
   - component: {fileID: 1954797053}
   - component: {fileID: 1954797055}
+  - component: {fileID: 1954797056}
   m_Layer: 0
   m_Name: InteractiveLoader
   m_TagString: Untagged
@@ -6387,8 +6389,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   serverRoot: https://et-server-data.vercel.app/Interactive/
-  grade: Grade 1
-  bundlePrefix: englishtek
+  useGoogleSheetCatalogs: 1
+  webAppUrl: https://script.google.com/macros/s/AKfycbyTwL-5-F72fVD9lX63CqOESbTFvWKPn1Iu1AcFIC_7bKWH2rLACFmFLOHBb4edr6ln/exec
+  grade: Grade 2
+  currentTek: 2
+  bundlePrefix: 2
   refreshCatalogOnStart: 1
   overlayPrefab: {fileID: 8140076130552236305, guid: 374d600c8dd5b3245bcdeed3e86961f1,
     type: 3}
@@ -6440,6 +6445,19 @@ MonoBehaviour:
   entryGroup: {fileID: 1812227770}
   lessonBackButtonGroup: {fileID: 1096908480}
   lessonBackButtonObject: {fileID: 1915611052}
+--- !u!114 &1954797056
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1954797052}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b1b2dae3999301546877916b5122d5d2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  targetFrameRate: 60
 --- !u!1 &1994119203
 GameObject:
   m_ObjectHideFlags: 0
