@@ -9,6 +9,7 @@ namespace Tek.Core
     [DisallowMultipleComponent]
     public class DebugMenuDropdown : MonoBehaviour
     {
+        [SerializeField] private bool enableDebugMenu = true;
         [Header("Dropdown References")]
         [SerializeField] private TMP_Dropdown tekDropdown;
         [SerializeField] private TMP_Dropdown gradeDropdown;
@@ -45,6 +46,12 @@ namespace Tek.Core
 
         private void Awake()
         {
+            if (!enableDebugMenu)
+            {
+                gameObject.SetActive(false);
+                return;
+            }
+
             if (tekDropdown == null || gradeDropdown == null)
             {
                 Debug.LogWarning("[DebugMenuDropdown] Assign both Tek and Grade TMP_Dropdown references.");
