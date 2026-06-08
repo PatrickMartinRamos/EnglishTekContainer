@@ -16,7 +16,7 @@ namespace Tek.Core
         [SerializeField] private string webAppUrl = "https://script.google.com/macros/s/AKfycbyTwL-5-F72fVD9lX63CqOESbTFvWKPn1Iu1AcFIC_7bKWH2rLACFmFLOHBb4edr6ln/exec";
         [SerializeField] private GradeLevel grade = GradeLevel.Grade1;
         [SerializeField] private CurrentTek currentTek = CurrentTek.englishtek;
-        [SerializeField] private BundlePrefix bundlePrefix = BundlePrefix.englishtek;
+        private BundlePrefix bundlePrefix = BundlePrefix.englishtek;
         [SerializeField] private bool refreshCatalogOnStart = true;
         [SerializeField] private ContainerReturnOverlay overlayPrefab = null;
         [SerializeField] private OverlayButtonCorner overlayButtonCorner = OverlayButtonCorner.TopLeft;
@@ -44,7 +44,7 @@ namespace Tek.Core
         private void Start()
         {
             EnsureCacheVersionCurrent();
-
+            
             if (refreshCatalogOnStart)
             {
                 RefreshCatalog();
@@ -190,16 +190,21 @@ namespace Tek.Core
 
             return null;
         }
-
+    
         private InteractiveBundleService.DownloadTarget BuildDownloadTarget(string gameId, InteractiveCatalogEntry entry)
         {
-            return InteractiveBundleService.BuildDownloadTarget(gameId, entry, grade, defaultCategory, defaultUnit, bundlePrefix);
+            return InteractiveBundleService.BuildDownloadTarget(gameId, entry, grade, defaultCategory, defaultUnit, currentTek, bundlePrefix);
         }
 
         private void NotifyGameLoadFinished()
         {
             gameLoadInProgress = false;
             GameLoadFinished?.Invoke();
+        }
+
+        public string CurrentTekGetter()
+        {
+            return InteractivePathResolver.GetTekPathName(currentTek);
         }
 
         private void EnsureCacheVersionCurrent()

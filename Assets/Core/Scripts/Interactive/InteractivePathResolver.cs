@@ -2,9 +2,9 @@ using System;
 
 namespace Tek.Core
 {
-    internal static class InteractivePathResolver
+    public static class InteractivePathResolver
     {
-        internal static string GetTekPathName(CurrentTek tek)
+        public static string GetTekPathName(CurrentTek tek)
         {
             switch (tek)
             {
@@ -23,7 +23,7 @@ namespace Tek.Core
             }
         }
 
-        internal static string GetGradePathName(GradeLevel grade)
+        public static string GetGradePathName(GradeLevel grade)
         {
             switch (grade)
             {
@@ -52,7 +52,7 @@ namespace Tek.Core
             }
         }
 
-        internal static string BuildCatalogUrl(string serverRoot, bool useGoogleSheetCatalogs, string webAppUrl, CurrentTek currentTek, GradeLevel grade, string catalogFileName)
+        public static string BuildCatalogUrl(string serverRoot, bool useGoogleSheetCatalogs, string webAppUrl, CurrentTek currentTek, GradeLevel grade, string catalogFileName)
         {
             if (useGoogleSheetCatalogs)
             {
@@ -63,13 +63,13 @@ namespace Tek.Core
             return BuildRootUrl(serverRoot) + BundleUrlHelper.EncodePathSegments(tekAndGradePath) + "/" + catalogFileName;
         }
 
-        internal static string BuildFolderUrl(string serverRoot, CurrentTek currentTek, string folderName)
+        public static string BuildFolderUrl(string serverRoot, CurrentTek currentTek, string folderName)
         {
             string tekAwareFolder = BuildTekRelativePath(GetTekPathName(currentTek), folderName);
             return BuildRootUrl(serverRoot) + BundleUrlHelper.EncodePathSegments(tekAwareFolder) + "/";
         }
 
-        internal static string ResolveCatalogAssetUrl(string serverRoot, CurrentTek currentTek, GradeLevel grade, InteractiveCatalogEntry entry, string assetPath)
+        public static string ResolveCatalogAssetUrl(string serverRoot, CurrentTek currentTek, GradeLevel grade, InteractiveCatalogEntry entry, string assetPath)
         {
             if (string.IsNullOrWhiteSpace(assetPath))
             {

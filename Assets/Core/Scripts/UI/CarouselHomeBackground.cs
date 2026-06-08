@@ -24,7 +24,7 @@ namespace Tek.Core
         [SerializeField] private InteractiveController controller;
         [Tooltip("The UIGroup that shows the entry panel. When assigned, loading triggers after the show animation completes instead of while the panel may still be hidden.")]
         [SerializeField] private UIGroup entryGroup;
-
+        [SerializeField] private TMPro.TextMeshProUGUI mainTitleText;
         private readonly List<InteractiveCatalogEntry> entries = new List<InteractiveCatalogEntry>();
         private Texture2D currentTexture;
         private Sprite currentSprite;
@@ -45,6 +45,9 @@ namespace Tek.Core
 
             if (entryGroup != null)
                 entryGroup.OnShown += HandleEntryGroupShown;
+
+            if (mainTitleText != null)
+                mainTitleText.text = controller != null ? controller.CurrentTekGetter() : "";
         }
 
         private void OnDisable()

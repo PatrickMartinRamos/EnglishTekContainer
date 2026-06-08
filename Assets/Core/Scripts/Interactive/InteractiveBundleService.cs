@@ -31,13 +31,15 @@ namespace Tek.Core
             GradeLevel grade,
             string defaultCategory,
             string defaultUnit,
+            CurrentTek currentTek,
             BundlePrefix bundlePrefix)
         {
+            BundlePrefix effectivePrefix = ResolveBundlePrefix(currentTek, bundlePrefix);
             string effectiveGrade = InteractivePathResolver.GetGradePathName(grade);
             string effectiveCategory = defaultCategory;
             string effectiveUnit = defaultUnit;
             string effectiveFolder = BundleUrlHelper.BuildDefaultFolderPath(effectiveGrade, effectiveCategory, effectiveUnit, gameId);
-            string effectiveBundleBase = BundleUrlHelper.BuildDefaultBundleBaseName(bundlePrefix.ToString(), InteractivePathResolver.GetGradePathName(grade), gameId);
+            string effectiveBundleBase = BundleUrlHelper.BuildDefaultBundleBaseName(effectivePrefix.ToString(), InteractivePathResolver.GetGradePathName(grade), gameId);
 
             if (entry != null)
             {
@@ -51,7 +53,7 @@ namespace Tek.Core
 
                 effectiveBundleBase = !string.IsNullOrWhiteSpace(entry.bundleBaseName)
                     ? entry.bundleBaseName
-                    : BundleUrlHelper.BuildDefaultBundleBaseName(bundlePrefix.ToString(), effectiveGrade, gameId);
+                    : BundleUrlHelper.BuildDefaultBundleBaseName(effectivePrefix.ToString(), effectiveGrade, gameId);
             }
 
             return new DownloadTarget
@@ -61,6 +63,16 @@ namespace Tek.Core
                 bundleFileNameBase = effectiveBundleBase,
                 cacheKey = BundleUrlHelper.BuildCacheKey(gameId, effectiveBundleBase, entry != null ? entry.bundleVersion : null)
             };
+        }
+
+        private static BundlePrefix ResolveBundlePrefix(CurrentTek currentTek, BundlePrefix fallbackPrefix)
+        {
+            if (Enum.TryParse(currentTek.ToString(), true, out BundlePrefix parsedPrefix))
+            {
+                return parsedPrefix;
+            }
+
+            return fallbackPrefix;
         }
 
         internal static string GetCacheDirectory(string cacheKey)
